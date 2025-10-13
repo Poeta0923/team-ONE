@@ -1,0 +1,145 @@
+/* ContestsPage.css */
+.contests-content {
+  padding: 20px;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.content-header h2 {
+  color: #333;
+  font-size: 24px;
+  margin: 0;
+}
+
+.contests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.contest-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.3s ease;
+}
+
+.contest-card:hover {
+  transform: translateY(-2px);
+}
+
+.contest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.contest-header h3 {
+  color: #333;
+  font-size: 18px;
+  margin: 0;
+}
+
+.contest-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.contest-status.ongoing {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.contest-status.upcoming {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.contest-status.completed {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.contest-description {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.contest-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #666;
+}
+
+.contest-date,
+.contest-participants {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.contest-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: #ff6b35;
+  border: 1px solid #ff6b35;
+}
+
+.btn-outline:hover {
+  background-color: #ff6b35;
+  color: white;
+}
+
+.btn-primary {
+  background-color: #ff6b35;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #e55a2b;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .contests-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .content-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .contest-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
