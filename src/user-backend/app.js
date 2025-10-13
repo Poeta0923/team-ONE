@@ -6,7 +6,7 @@
 const express = require('express');
 // HTTP 요청 본문 파싱 미들웨어 로드 (HTML 폼 데이터 처리)
 const bodyParser = require('body-parser'); 
-// 프로젝트 전역 로거 (Winston 등) 로드
+// 프로젝트 전역 로거 (Winston) 로드
 const logger = require('./lib/logger'); 
 // Express 애플리케이션 인스턴스 생성
 const app = express();
@@ -29,10 +29,10 @@ app.get('/favicon.ico', (req, res) => res.status(404).end());
 // 3. Router & Service Implementation
 // =================================================================
 
-const rootRouter = require('./router/rootRouter');
+const authRouter = require('./router/authRouter');
 
-// 라우터 연결 (예: '/app' 경로로 라우터 연결)
-app.use('/app', rootRouter);
+// 라우터 연결
+app.use('/api/auth', authRouter);
 
 // =================================================================
 // 4. Server Initialization
