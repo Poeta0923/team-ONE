@@ -43,7 +43,7 @@ module.exports = {
         // [2] 데이터베이스에서 사용자 정보 조회
         db.query(
             // NOTE: DB에 저장된 암호화된 비밀번호와 고유 식별자를 조회
-            `SELECT password, id FROM user WHERE id = ?`,
+            `SELECT password, id FROM users WHERE id = ?`,
             [sntzedId],
             (error, result) => {
                 if (error) {
