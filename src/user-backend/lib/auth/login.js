@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 객체를 가져옴)
 const db = require('../db');
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('./logger');
+const logger = require('../logger');
 // HTML 파싱 & 필터링 라이브러리 로드 (XSS 방지 및 기본 입력 Sanitization)
 var sanitizeHtml = require('sanitize-html');
 // 단방향 해시 알고리즘 로드 (비밀번호 비교에 사용)
@@ -17,7 +17,7 @@ const jwt = require('jsonwebtoken');
 
 // 환경 변수에서 JWT Secret Key 및 만료 시간 로드
 // NOTE: .env 파일이 server.js에서 먼저 로드되어야 사용 가능
-const JWT_SECRET = process.env.JWT_SECRET || 'your_fallback_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 // =================================================================
@@ -38,7 +38,7 @@ module.exports = {
         const sntzedId = sanitizeHtml(post.id); 
         const sntzedPassword = sanitizeHtml(post.password);
         
-        logger.debug(`[Auth] ${post.id} 로그인 시도`);
+        logger.debug(`[Login] ${post.id} 로그인 시도`);
 
         // [2] 데이터베이스에서 사용자 정보 조회
         db.query(
@@ -68,7 +68,7 @@ module.exports = {
 
                         if(isMatch) {
                             // [5-1] 로그인 성공 및 JWT 토큰 생성
-                            logger.info(`[Auth Success] 사용자 로그인 성공: ${user.id}`);
+                            logger.info(`[Login Success] 사용자 로그인 성공: ${user.id}`);
                             
                             // 토큰 payload 정의: 민감하지 않은 사용자 고유 정보 포함
                             const tokenPayload = {
@@ -92,14 +92,14 @@ module.exports = {
 
                         } else {
                             // [5-2] 비밀번호 불일치
-                            logger.debug(`[Auth Failed] 비밀번호 불일치. 시도 ID: ${user.id}`);
+                            logger.debug(`[Login Failed] 비밀번호 불일치. 시도 ID: ${user.id}`);
                             res.status(401).json({ message: 'Invalid credentials' });
                         }
                     });
 
                 } else {
                     // [3-2] 사용자 ID가 DB에 없음
-                    logger.debug(`[Auth Failed] 해당 ID의 계정 없음. 시도 ID: ${post.id}`);
+                    logger.debug(`[Login Failed] 해당 ID의 계정 없음. 시도 ID: ${post.id}`);
                     res.status(401).json({ message: 'Invalid credentials' });
                 }
             }
