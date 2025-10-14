@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+sentence-transformers==2.6.1
+torch
+langdetect
+nltk
+orjson
+datasets>=2.18.0

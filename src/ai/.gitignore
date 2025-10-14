@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/ venv/ env/
+logs/ output/ outputs/ runs/ wandb/
+data/ datasets/
+*.pt *.pth *.ckpt *.bin *.onnx *.npz *.h5 *.tar *.zip
+.vscode/ .idea/
+.DS_Store Thumbs.db
+teamonevenv/
+.env
+models
