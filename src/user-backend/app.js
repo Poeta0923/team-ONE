@@ -29,9 +29,11 @@ app.get('/favicon.ico', (req, res) => res.status(404).end());
 // 3. Router & Service Implementation
 // =================================================================
 
+const rootRouter = require('./router/rootRouter');
 const authRouter = require('./router/authRouter');
 
 // 라우터 연결
+app.use('/api', rootRouter);
 app.use('/api/auth', authRouter);
 
 // =================================================================

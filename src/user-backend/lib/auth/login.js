@@ -5,9 +5,9 @@
 // HTTP 요청 본문 파싱 미들웨어 로드 (사용자 입력을 req.body로 가져오기 위함)
 const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 객체를 가져옴)
-const db = require('../db');
+const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('../logger');
+const logger = require('../util/logger');
 // HTML 파싱 & 필터링 라이브러리 로드 (XSS 방지 및 기본 입력 Sanitization)
 var sanitizeHtml = require('sanitize-html');
 // 단방향 해시 알고리즘 로드 (비밀번호 비교에 사용)
@@ -43,7 +43,7 @@ module.exports = {
         // [2] 데이터베이스에서 사용자 정보 조회
         db.query(
             // NOTE: DB에 저장된 암호화된 비밀번호와 고유 식별자를 조회
-            `SELECT password, id FROM users WHERE id = ?`,
+            `SELECT password, id, userId FROM users WHERE id = ?`,
             [sntzedId],
             (error, result) => {
                 if (error) {
@@ -68,11 +68,11 @@ module.exports = {
 
                         if(isMatch) {
                             // [5-1] 로그인 성공 및 JWT 토큰 생성
-                            logger.info(`[Login Success] 사용자 로그인 성공: ${user.id}`);
+                            logger.info(`[Login Success] 사용자 로그인 성공: ${user.userId}`);
                             
                             // 토큰 payload 정의: 민감하지 않은 사용자 고유 정보 포함
                             const tokenPayload = {
-                                id: user.id,
+                                id: user.userId,
                                 // role 등의 권한 정보도 여기에 포함 가능
                             };
 
@@ -92,7 +92,7 @@ module.exports = {
 
                         } else {
                             // [5-2] 비밀번호 불일치
-                            logger.debug(`[Login Failed] 비밀번호 불일치. 시도 ID: ${user.id}`);
+                            logger.debug(`[Login Failed] 비밀번호 불일치. 시도 ID: ${user.userId}`);
                             res.status(401).json({ message: 'Invalid credentials' });
                         }
                     });

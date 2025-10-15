@@ -5,18 +5,16 @@
 // HTTP 요청 본문 파싱 미들웨어 로드
 const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 객체를 가져옴)
-const db = require('../db');
+const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('../logger');
-// HTML 파싱 & 필터링 라이브러리 로드 (XSS 방지 및 기본 입력 Sanitization)
-const sanitizeHtml = require('sanitize-html');
+const logger = require('../util/logger');
 // 단방향 해시 알고리즘 로드 (비밀번호 해싱에 사용)
 const bycrypt = require('bcrypt');
 // jsonwebtoken 라이브러리 로드 (인증 토큰 생성 및 관리에 사용)
 const jwt = require('jsonwebtoken');
 
 // 입력 객체 Sanitization 유틸리티 로드 (XSS 방지 및 기본 입력 Sanitization)
-const sanitizeUtil = require('./sanitizeUtil'); 
+const sanitize = require('../util/sanitize'); 
 
 // 환경 변수에서 JWT Secret Key 및 만료 시간 로드
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
@@ -57,8 +55,8 @@ module.exports = {
     signUp: async (req, res) => {
         try {
             // [1] 사용자 입력 추출 및 Sanitization (18개 항목 포함)
-            // NOTE: sanitizeUtil을 사용하여 모든 문자열 입력에 XSS 방어 적용
-            const sanitizedPost = sanitizeUtil.sanitizeObject(req.body); 
+            // NOTE: sanitize을 사용하여 모든 문자열 입력에 XSS 방어 적용
+            const sanitizedPost = sanitize.sanitizeObject(req.body); 
             
             logger.debug(`[SignUp] 회원가입 시도`);
 
@@ -101,7 +99,7 @@ module.exports = {
 
             // [4-2] 이력서 정보 저장 (resumes 테이블)
             const resumeValues = [
-                newUserId, // ★ 방금 얻은 userId 사용
+                newUserId, // sql1 쿼리에서 얻은 userId 사용
                 sanitizedPost.address, 
                 sanitizedPost.mbti, 
                 sanitizedPost.workStyle, 
