@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .venv/ venv/ env/
+.teamonevenv/
 logs/ output/ outputs/ runs/ wandb/
 data/ datasets/
 *.pt *.pth *.ckpt *.bin *.onnx *.npz *.h5 *.tar *.zip
@@ -9,3 +10,113 @@ data/ datasets/
 teamonevenv/
 .env
 models
+
+# ---------------------------
+# OS & Editor junk
+# ---------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---------------------------
+# Python build/cache
+# ---------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+*.egg-info/
+.eggs/
+build/
+dist/
+*.spec         # pyinstaller
+
+# Tools caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+.ipynb_checkpoints/
+
+# ---------------------------
+# Virtual environments
+# ---------------------------
+venv/
+.venv/
+env/
+teamonevenv/           # 스샷에 보인 venv 폴더
+*/include/             # venv 하위 include 등
+*.venv/
+
+# ---------------------------
+# Secrets & local config
+# ---------------------------
+.env
+.env.*
+*.secret
+*.key
+*.pem
+
+# ---------------------------
+# Logs & runtime
+# ---------------------------
+logs/
+**/logs/
+*.log
+*.rrd                # rerun/replay 로그 파일
+tmp/
+temp/
+run/
+*.pid
+
+# ---------------------------
+# Model artifacts & large binaries
+# ---------------------------
+ai/app/models/embeddings/**     # 임베딩 가중치/체크포인트 전부 제외
+ai/app/models/**/checkpoints/**
+ai/app/models/**/artifacts/**
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.onnx
+*.tflite
+*.pb
+*.safetensors
+
+# (원한다면 문서만 허용)
+!ai/app/models/embeddings/README.md
+!ai/app/models/README.md
+
+# ---------------------------
+# Data / outputs
+# ---------------------------
+data/
+datasets/
+output/
+outputs/
+results/
+**/payloads/
+*.npy
+*.npz
+*.pkl
+*.csv
+*.parquet
+
+# 샌드박스/실험 결과 JSON (스크린샷의 두 파일 포함)
+sandbox*_rank*.json
+*_res.json
+payload.json
+
+# ---------------------------
+# Packaging / Docker (옵션)
+# ---------------------------
+.local/
+*.tar
+*.tar.gz
+*.zip
