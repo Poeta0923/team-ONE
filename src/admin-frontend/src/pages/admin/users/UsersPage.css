@@ -1,112 +1,197 @@
 /* UsersPage.css */
-.users-content {
+.users-page {
   padding: 20px;
 }
 
-.content-header {
+.users-tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e9ecef;
 }
 
-.content-header h2 {
-  color: #333;
-  font-size: 24px;
-  margin: 0;
+.tab-button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-.users-table-container {
+.tab-button:hover {
+  color: #ff6b35;
+}
+
+.tab-button.active {
+  color: #ff6b35;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ff6b35;
+}
+
+.users-content {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 리스트 정보 */
+.list-info {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.list-info p {
+  margin: 0;
+  color: #495057;
+  font-weight: 600;
+}
+
+/* 테이블 공통 스타일 */
 .users-table {
   width: 100%;
   border-collapse: collapse;
 }
 
+.users-table thead {
+  background: #f8f9fa;
+}
+
 .users-table th {
-  background-color: #f8f9fa;
-  color: #333;
+  padding: 16px 12px;
+  text-align: center;
   font-weight: 600;
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #e1e5e9;
+  color: #2c3e50;
+  border-bottom: 2px solid #dee2e6;
+  vertical-align: middle;
 }
 
 .users-table td {
-  padding: 15px;
-  border-bottom: 1px solid #e1e5e9;
-  color: #666;
+  padding: 16px 12px;
+  border-bottom: 1px solid #e9ecef;
+  color: #495057;
+  text-align: center;
+  vertical-align: middle;
+  height: 60px;
 }
 
-.users-table tr:hover {
-  background-color: #f8f9fa;
+.users-table tbody tr:hover {
+  background: #f8f9fa;
 }
 
-.status {
+/* 더보기 버튼 */
+.more-button {
+  padding: 6px 16px;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.more-button:hover {
+  background: #e55a2b;
+  transform: translateY(-1px);
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pagination-button {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #495057;
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-button.active {
+  background: #ff6b35;
+  color: white;
+  border-color: #ff6b35;
+}
+
+.pagination-ellipsis {
+  padding: 8px 4px;
+  color: #6c757d;
+}
+
+/* 로딩 상태 */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+/* 빈 상태 */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* 상태 배지 */
+.status-badge {
+  display: inline-block;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-.status.active {
-  background-color: #d4edda;
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-resolved {
+  background: #d4edda;
   color: #155724;
 }
 
-.status.inactive {
-  background-color: #f8d7da;
+.status-banned {
+  background: #f8d7da;
   color: #721c24;
-}
-
-.btn-small {
-  padding: 6px 12px;
-  font-size: 12px;
-  margin-right: 5px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: #ff6b35;
-  border: 1px solid #ff6b35;
-}
-
-.btn-outline:hover {
-  background-color: #ff6b35;
-  color: white;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-danger:hover {
-  background-color: #c82333;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .users-table-container {
-    overflow-x: auto;
-  }
-  
-  .users-table {
-    min-width: 600px;
-  }
-  
-  .content-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
 }

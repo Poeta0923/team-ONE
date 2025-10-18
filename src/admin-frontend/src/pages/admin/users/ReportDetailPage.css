@@ -1,0 +1,277 @@
+/* ReportDetailPage.css */
+.report-detail-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.detail-header {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.detail-header h2 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* 신고 내역 섹션 */
+.reports-section {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.reports-section h3 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-card {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 16px;
+  background: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.report-card:hover {
+  border-color: #ff6b35;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.1);
+}
+
+.report-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-label {
+  font-weight: 600;
+  color: #6c757d;
+  min-width: 80px;
+}
+
+.report-value {
+  color: #495057;
+}
+
+/* 액션 섹션 */
+.action-section {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.action-section h3 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.block-button {
+  padding: 12px 24px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 200px;
+}
+
+.block-button:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.unblock-button {
+  padding: 12px 24px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 200px;
+}
+
+.unblock-button:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.block-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 600px;
+}
+
+.block-reason-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.block-reason-input:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.block-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-block-button {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-block-button:hover {
+  background: #c82333;
+}
+
+.cancel-button {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: #5a6268;
+}
+
+/* 푸터 */
+.detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px 0;
+}
+
+.back-button {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* 로딩 */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .report-detail-page {
+    padding: 16px;
+  }
+
+  .detail-header,
+  .reports-section,
+  .action-section {
+    padding: 16px;
+  }
+
+  .report-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .report-label {
+    min-width: auto;
+  }
+
+  .block-buttons {
+    flex-direction: column;
+  }
+
+  .block-button,
+  .unblock-button,
+  .back-button {
+    width: 100%;
+    max-width: none;
+  }
+}
+

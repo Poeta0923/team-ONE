@@ -129,7 +129,7 @@ const HomePage = () => {
               data-animate 
               className={`team-member ${visibleElements.has('member-2') ? 'animate-fade-in-up' : ''}`}
             >
-              <div className="member-avatar">👩‍💻</div>
+              <div className="member-avatar">👨‍💻</div>
               <h3>김현재</h3>
               <p className="member-role">웹 백엔드 개발자</p>
               <p className="member-description">웹 백엔드 개발을 담당합니다.</p>
@@ -149,7 +149,7 @@ const HomePage = () => {
               data-animate 
               className={`team-member ${visibleElements.has('member-4') ? 'animate-fade-in-up' : ''}`}
             >
-              <div className="member-avatar">👩‍🔬</div>
+              <div className="member-avatar">👩‍🎨</div>
               <h3>김민주</h3>
               <p className="member-role">웹 프론트엔드 개발자</p>
               <p className="member-description">웹 프론트엔드 개발을 담당합니다.</p>
@@ -159,7 +159,7 @@ const HomePage = () => {
               data-animate 
               className={`team-member ${visibleElements.has('member-5') ? 'animate-fade-in-up' : ''}`}
             >
-              <div className="member-avatar">👨‍💼</div>
+              <div className="member-avatar">👩‍💻</div>
               <h3>이채민</h3>
               <p className="member-role">AI 개발자</p>
               <p className="member-description">프로젝트의 전체적인 AI 개발을 담당합니다.</p>

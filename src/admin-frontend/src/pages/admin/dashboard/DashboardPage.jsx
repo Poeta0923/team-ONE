@@ -51,10 +51,6 @@ const DashboardPage = () => {
       <div className="dashboard-section">
         <div className="section-header">
           <h3>월간 이용자 증감</h3>
-          <div className="change-indicator positive">
-            <span className="change-icon">📈</span>
-            <span className="change-text">+{tempData.monthlyUsers.change}%</span>
-          </div>
         </div>
         <div className="chart-container">
           <div className="chart-placeholder">
@@ -119,10 +115,6 @@ const DashboardPage = () => {
       <div className="dashboard-section">
         <div className="section-header">
           <h3>연간 이용자 증감</h3>
-          <div className="change-indicator positive">
-            <span className="change-icon">📈</span>
-            <span className="change-text">+25.5%</span>
-          </div>
         </div>
         <div className="chart-container">
           <div className="chart-placeholder">

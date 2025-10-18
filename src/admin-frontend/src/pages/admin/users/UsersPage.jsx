@@ -1,64 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../../components/AdminLayout';
+import AllUsersList from './AllUsersList';
+import ReportedUsersList from './ReportedUsersList';
+import BlockedUsersList from './BlockedUsersList';
 import './UsersPage.css';
 
 const UsersPage = () => {
+  const [activeTab, setActiveTab] = useState('all');
+
+  const tabs = [
+    { id: 'all', label: '전체 회원' },
+    { id: 'reported', label: '신고받은 회원' },
+    { id: 'blocked', label: '차단된 회원' }
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'all':
+        return <AllUsersList />;
+      case 'reported':
+        return <ReportedUsersList />;
+      case 'blocked':
+        return <BlockedUsersList />;
+      default:
+        return <AllUsersList />;
+    }
+  };
+
   return (
     <AdminLayout>
-      <div className="users-content">
-        <div className="content-header">
-          <h2>회원 관리</h2>
-          <button className="btn btn-primary">새 회원 추가</button>
+      <div className="users-page">
+        <div className="users-tabs">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-        
-        <div className="users-table-container">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>이름</th>
-                <th>이메일</th>
-                <th>가입일</th>
-                <th>상태</th>
-                <th>액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>김개발</td>
-                <td>kim@example.com</td>
-                <td>2024-01-15</td>
-                <td><span className="status active">활성</span></td>
-                <td>
-                  <button className="btn-small btn-outline">수정</button>
-                  <button className="btn-small btn-danger">삭제</button>
-                </td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>이백엔드</td>
-                <td>lee@example.com</td>
-                <td>2024-01-20</td>
-                <td><span className="status active">활성</span></td>
-                <td>
-                  <button className="btn-small btn-outline">수정</button>
-                  <button className="btn-small btn-danger">삭제</button>
-                </td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td>박디자인</td>
-                <td>park@example.com</td>
-                <td>2024-02-01</td>
-                <td><span className="status inactive">비활성</span></td>
-                <td>
-                  <button className="btn-small btn-outline">수정</button>
-                  <button className="btn-small btn-danger">삭제</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+        <div className="users-content">
+          {renderContent()}
         </div>
       </div>
     </AdminLayout>
