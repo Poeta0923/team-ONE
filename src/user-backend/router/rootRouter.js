@@ -1,3 +1,5 @@
+// 파일: rootRouter.js (수정됨)
+
 // =================================================================
 // 1. Core Modules & Configuration
 // =================================================================
@@ -8,6 +10,8 @@ const express = require('express');
 const router = express.Router();
 // 프로젝트 전역 로거 로드 (Winston)
 const logger = require('../lib/logger');
+// 💡 JWT 인증 미들웨어 로드 (인증 로직을 라우터에 적용하기 위해 필요)
+const verifyToken = require('../util/authMiddleware'); // 경로는 실제 위치에 맞게 수정해야 합니다.
 
 // =================================================================
 // 2. Library Js Files Routing (외부 모듈/컨트롤러 로드)
@@ -16,20 +20,17 @@ const logger = require('../lib/logger');
 // 홈 화면 호출에 필요한 데이터를 반환하는 모듈 호출
 const mainPage = require('../lib/mainPage');
 
-
 // =================================================================
 // 3. API Route Endpoints Definition
 // =================================================================
 
-// [1] [GET] /api/homePage 경로 정의
-// 홈 페이지 정보 요청을 처리하는 라우트 핸들러
-router.get('/homePage', (req, res)=>{
-    // 요청 진입 시 logger.info로 로그 기록 (API 호출 추적)
-    logger.info(`GET /api/mainPage`);
-    
-    // 실제 인증 로직은 'mainPage' 컨트롤러 모듈로 위임
-    // (이 함수 내에서 JWT 토큰 payload를 확인 후 정보를 조회하여 응답)
-    login.login(req, res);
+// [1] [GET] /api/mainPage 경로 정의
+router.get('/mainPage', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`GET /api/mainPage - User: ${req.user ? req.user.id : 'N/A'}`);
+
+    // mainPage.mainPage 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
+    mainPage.mainPage(req, res);
 })
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
