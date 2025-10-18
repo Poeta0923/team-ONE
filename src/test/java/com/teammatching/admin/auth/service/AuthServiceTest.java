@@ -47,10 +47,10 @@ public class AuthServiceTest {
         // tokenProvider.createToken()이 호출되면, "fake-jwt-token" 문자열을 반환하도록 설정
         when(tokenProvider.createToken(fakeAdmin.getId(), fakeAdmin.getRole().name())).thenReturn("fake-jwt-token");
 
-        // When: 실제 테스트할 메소드를 실행하면
+        // When
         TokenResponse tokenResponse = authService.login(request);
 
-        // Then: 결과는 이래야 한다
+        // Then
         assertNotNull(tokenResponse);
         assertEquals("fake-jwt-token", tokenResponse.accessToken());
     }
