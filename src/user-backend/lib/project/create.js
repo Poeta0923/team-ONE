@@ -43,7 +43,7 @@ const connectionQueryPromise = (connection, sql, values) => {
 
 module.exports = {
     /**
-     * @description 프로젝트 생성 후 해당 프로젝트 정보 반환 (트랜잭션 적용)
+     * @description 프로젝트 생성 후 해당 프로젝트 정보 반환
      */
     create: async (req, res) => {
         let connection; 
@@ -56,7 +56,7 @@ module.exports = {
             // [1] 사용자 입력 추출 및 Sanitization
             const sanitizedPost = sanitize.sanitizeObject(req.body);
 
-            // [2] SQL 쿼리 정의 (생략)
+            // [2] SQL 쿼리 정의
             const sqlContest = `SELECT contestId FROM contests WHERE name = ?`;
             const sqlNewContest = `INSERT INTO contests (name) VALUES (?)`;
             const sqlProjects = `INSERT INTO projects (name, type, contestId, category, require, recruitment, explain, statement) VALUES (?, ?, ?, ?, ?, ?, ?, "모집중")`;
@@ -75,7 +75,7 @@ module.exports = {
             // [4-1] 공모전 정보 확인 및 ID 획득
             const contestValue = [sanitizedPost.contestName];
             const newContestValue = [sanitizedPost.newContestName];
-            let contestId; // var 대신 let 사용 권장
+            let contestId;
 
             if (sanitizedPost.contestName === '그 외') {
                 // 새 공모전 생성
