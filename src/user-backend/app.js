@@ -31,10 +31,12 @@ app.get('/favicon.ico', (req, res) => res.status(404).end());
 
 const rootRouter = require('./router/rootRouter');
 const authRouter = require('./router/authRouter');
+const projectRouter = require('./router/projectRouter');
 
 // 라우터 연결
 app.use('/api', rootRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/project', projectRouter);
 
 // =================================================================
 // 4. Server Initialization
