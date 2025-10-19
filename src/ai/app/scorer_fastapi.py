@@ -38,7 +38,7 @@ import time
 import logging
 from typing import List, Dict, Optional, Literal, Tuple
 from datetime import datetime
-
+from typing import TYPE_CHECKING, Optional
 import numpy as np
 import torch
 import torch.nn as nn
@@ -68,10 +68,15 @@ DEFAULT_BASE_MODEL = os.environ.get(
 # ----------------------------
 # Embedding loader (disk-based)
 # ----------------------------
+# 런타임엔 별칭으로만 사용
 try:
+    from sentence_transformers import SentenceTransformer as _ST
+except Exception:
+    _ST = None
+
+# 타입체커(Pylance, mypy)만 실제 타입 참조
+if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
-except Exception as e:  # pragma: no cover
-    SentenceTransformer = None
 
 _emb_model: Optional[SentenceTransformer] = None
 _emb_path: Optional[str] = None
@@ -87,13 +92,13 @@ def latest_embedding_path() -> str:
     return DEFAULT_BASE_MODEL
 
 
-def get_embedding_model() -> Tuple[SentenceTransformer, str]:
+def get_embedding_model() -> tuple[SentenceTransformer, str]:
     global _emb_model, _emb_path
     mp = latest_embedding_path()
     if _emb_model is None or _emb_path != mp:
-        if SentenceTransformer is None:
+        if _ST is None:
             raise RuntimeError('sentence-transformers is not installed')
-        _emb_model = SentenceTransformer(mp)
+        _emb_model = _ST(mp)
         _emb_path = mp
     return _emb_model, mp
 
