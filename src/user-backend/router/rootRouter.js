@@ -7,9 +7,9 @@ const express = require('express');
 // Express Router 인스턴스 생성
 const router = express.Router();
 // 프로젝트 전역 로거 로드 (Winston)
-const logger = require('../lib/logger');
+const logger = require('../lib/util/logger');
 // 💡 JWT 인증 미들웨어 로드 (인증 로직을 라우터에 적용하기 위해 필요)
-const verifyToken = require('../util/authMiddleware'); // 경로는 실제 위치에 맞게 수정해야 합니다.
+const verifyToken = require('../util/authMiddleware');
 
 // =================================================================
 // 2. Library Js Files Routing (외부 모듈/컨트롤러 로드)
