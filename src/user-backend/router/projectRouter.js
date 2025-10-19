@@ -15,14 +15,23 @@ const verifyToken = require('../lib/util/authMiddleware');
 // 2. Library Js Files Routing (외부 모듈/컨트롤러 로드)
 // =================================================================
 
-// 홈 화면 호출에 필요한 데이터를 반환하는 모듈 호출
+// [1] 공모전 정보 요청 모듈 호출
+const contest = require('../lib/project/contest');
+
+// [2] 프로젝트 생성 모듈 호출
 const create = require('../lib/project/create');
 
 // =================================================================
 // 3. API Route Endpoints Definition
 // =================================================================
 
-// [1] [POST] /api/project/create 경로 정의
+// [1] [GET] /api/project/contest 경로 정의
+router.get('/contest', (req, res)=>{
+    logger.info(`GET /api/project/contest`);
+    contest.contest(req, res);
+})
+
+// [2] [POST] /api/project/create 경로 정의
 router.post('/create', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`POST /api/project/create - User: ${req.user ? req.user.id : 'N/A'}`);
