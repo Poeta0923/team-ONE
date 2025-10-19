@@ -24,6 +24,9 @@ const create = require('../lib/project/create');
 // [3] 프로젝트 삭제 모듈 호출
 const deleteProject = require('../lib/project/delete');
 
+// [4] 프로젝트 완료 처리 모듈 호출
+const complete = require('../lib/project/complete');
+
 // =================================================================
 // 3. API Route Endpoints Definition
 // =================================================================
@@ -46,11 +49,17 @@ router.post('/create', verifyToken, (req, res)=>{
 // [3] [DELETE] api/project/delete/:projectId 경로 정의
 router.delete('delete/:projectId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`DELETE /api/project/delete - User: ${req.user ? req.user.id : 'N/A'}`);
+    logger.info(`DELETE /api/project/delete/:projectId - User: ${req.user ? req.user.id : 'N/A'}`);
 
     // delete.delete 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     deleteProject.delete(req, res);
 })
 
-// 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
-module.exports = router;
+// [4] [PATCH] api/project/complete/:projectId 경로 정의
+router.complete('/patch/:projectId', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`PATCH /api/project/complete/:projectId - User: ${req.user ? req.user.id : 'N/A'}`);
+
+    // complete.complete 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
+    complete.complete(req, res);
+})
