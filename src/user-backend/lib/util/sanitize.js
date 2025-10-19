@@ -4,6 +4,10 @@
 // HTML 파싱 & 필터링 라이브러리 로드 (XSS 방지 및 기본 입력 Sanitization)
 const sanitizeHtml = require('sanitize-html');
 
+// =================================================================
+// 2. Feature Implement (모듈 내보내기)
+// =================================================================
+
 /**
  * @description 객체 내의 모든 문자열 값에 대해 HTML Sanitization을 적용하여 XSS 공격을 방지합니다.
  * @param {object} inputObject 정제가 필요한 입력 객체 (예: req.body)

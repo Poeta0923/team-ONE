@@ -1,9 +1,20 @@
+// =================================================================
+// 1. Core Modules & Configuration
+// =================================================================
+
+// 로깅 라이브러리: Node.js 환경에서 유연하고 확장 가능한 로깅을 제공
 const winston = require('winston');
+// Winston 플러그인: 로그 파일을 일별로 회전(rotate) 및 관리 기능 제공
 const winstonDaily = require('winston-daily-rotate-file');
+// Node.js 전역 객체: 현재 Node.js 프로세스 관련 정보 및 제어 기능 접근 (환경 변수, PID 등)
 const process = require('process');
 
 // Winston 포맷 유틸리티를 비구조화 할당하여 사용
 const {combine, timestamp, label, printf} = winston.format;
+
+// =================================================================
+// 2. Format & Path Configuration
+// =================================================================
 
 // 로그 파일이 저장될 절대 경로 설정. 현재 작업 디렉토리 아래 'logs' 폴더 지정.
 const logDirectory = `${process.cwd()}/logs`;
@@ -13,6 +24,10 @@ const logDirectory = `${process.cwd()}/logs`;
 const logFormat = printf(({level, message, label, timestamp})=>{
     return `${timestamp} [${label}] ${level}: ${message}`;
 });
+
+// =================================================================
+// 3. Feature Implement (모듈 내보내기)
+// =================================================================
 
 // Logger 인스턴스 생성
 const logger = winston.createLogger({
