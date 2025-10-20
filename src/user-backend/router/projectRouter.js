@@ -21,10 +21,13 @@ const contest = require('../lib/project/contest');
 // [2] 프로젝트 생성 모듈 호출
 const create = require('../lib/project/create');
 
-// [3] 프로젝트 삭제 모듈 호출
+// [3] 프로젝트 상세 정보 조회 모듈 호출
+const detail = require('../lib/project/detail');
+
+// [4] 프로젝트 삭제 모듈 호출
 const deleteProject = require('../lib/project/delete');
 
-// [4] 프로젝트 완료 처리 모듈 호출
+// [5] 프로젝트 완료 처리 모듈 호출
 const complete = require('../lib/project/complete');
 
 // =================================================================
@@ -46,7 +49,16 @@ router.post('/create', verifyToken, (req, res)=>{
     create.create(req, res);
 })
 
-// [3] [DELETE] api/project/delete/:projectId 경로 정의
+// [3] [GET] api/project/detail/:projectId 경로 정의
+router.get('detail/:projectId', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`GET /api/project/detail/:projectId - User: ${req/user ? req.user.id : N/A}`);
+
+    // detail.detail 함수가 실행될 때 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    detail.detail(req, res);
+})
+
+// [4] [DELETE] api/project/delete/:projectId 경로 정의
 router.delete('delete/:projectId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`DELETE /api/project/delete/:projectId - User: ${req.user ? req.user.id : 'N/A'}`);
@@ -55,7 +67,7 @@ router.delete('delete/:projectId', verifyToken, (req, res)=>{
     deleteProject.delete(req, res);
 })
 
-// [4] [PATCH] api/project/complete/:projectId 경로 정의
+// [5] [PATCH] api/project/complete/:projectId 경로 정의
 router.patch('/patch/:projectId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`PATCH /api/project/complete/:projectId - User: ${req.user ? req.user.id : 'N/A'}`);
