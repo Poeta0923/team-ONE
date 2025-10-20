@@ -72,7 +72,7 @@ module.exports = {
                             
                             // 토큰 payload 정의: 민감하지 않은 사용자 고유 정보 포함
                             const tokenPayload = {
-                                id: user.userId,
+                                userId: user.userId,
                                 // role 등의 권한 정보도 여기에 포함 가능
                             };
 
