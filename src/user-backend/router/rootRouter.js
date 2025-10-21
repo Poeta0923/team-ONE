@@ -25,7 +25,7 @@ const mainPage = require('../lib/mainPage');
 // [1] [GET] /api/mainPage 경로 정의
 router.get('/mainPage', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`GET /api/mainPage - User: ${req.user ? req.user.id : 'N/A'}`);
+    logger.info(`GET /api/mainPage - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     // mainPage.mainPage 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     mainPage.mainPage(req, res);
