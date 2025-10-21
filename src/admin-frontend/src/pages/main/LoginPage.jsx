@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoImage from '../../assets/로고.png';
+import { API_ENDPOINTS, setTokens } from '../../utils/api';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -9,6 +10,7 @@ const LoginPage = () => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,16 +20,55 @@ const LoginPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    // 임시 로그인 로직 (실제 API 연동 전)
-    if (formData.username === 'admin' && formData.password === 'admin123') {
-      // 로그인 성공 시 관리자 페이지로 이동
-      navigate('/admin');
-    } else {
-      setError('아이디 또는 비밀번호가 올바르지 않습니다.');
+    try {
+      // 백엔드 요청 형식에 맞게 데이터 전송
+      const response = await fetch(API_ENDPOINTS.ADMIN_LOGIN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: formData.username,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      // 응답 코드 확인
+      if (data.resultCode === 200) {
+        // 토큰 저장
+        if (data.data && data.data.accessToken && data.data.refreshToken) {
+          setTokens(data.data.accessToken, data.data.refreshToken);
+          
+          // 로그인 성공 메시지 (옵션)
+          console.log(data.successMessage);
+          
+          // 관리자 페이지로 이동
+          navigate('/admin');
+        } else {
+          setError('토큰 정보가 올바르지 않습니다.');
+        }
+      } else {
+        // 로그인 실패
+        setError(data.errorMessage || '로그인에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('로그인 에러:', err);
+      
+      // 네트워크 에러 또는 서버 연결 실패
+      if (err.message.includes('Failed to fetch')) {
+        setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+      } else {
+        setError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,8 +113,8 @@ const LoginPage = () => {
             />
           </div>
 
-          <button type="submit" className="login-btn">
-            로그인
+          <button type="submit" className="login-btn" disabled={isLoading}>
+            {isLoading ? '로그인 중...' : '로그인'}
           </button>
         </form>
 

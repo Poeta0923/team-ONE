@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoImage from '../assets/로고.png';
+import { clearTokens } from '../utils/api';
 import './AdminSidebar.css';
 
 const AdminSidebar = ({ activeMenu, onMenuChange }) => {
@@ -12,7 +13,9 @@ const AdminSidebar = ({ activeMenu, onMenuChange }) => {
   };
 
   const handleLogout = () => {
-    // 로그아웃 로직 (실제 구현 시 토큰 제거 등)
+    // 토큰 제거
+    clearTokens();
+    // 로그인 페이지로 이동
     navigate('/login');
   };
 

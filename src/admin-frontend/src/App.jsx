@@ -8,6 +8,7 @@ import ReportDetailPage from './pages/admin/users/ReportDetailPage';
 import ProjectsPage from './pages/admin/projects/ProjectsPage';
 import ContestsPage from './pages/admin/contests/ContestsPage';
 import AIPage from './pages/admin/ai/AIPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -18,13 +19,13 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         
-        {/* 관리자 페이지 */}
-        <Route path="/admin" element={<DashboardPage />} />
-        <Route path="/admin/users" element={<UsersPage />} />
-        <Route path="/admin/users/report-detail/:userId" element={<ReportDetailPage />} />
-        <Route path="/admin/projects" element={<ProjectsPage />} />
-        <Route path="/admin/contests" element={<ContestsPage />} />
-        <Route path="/admin/ai" element={<AIPage />} />
+        {/* 관리자 페이지 - 인증 필요 */}
+        <Route path="/admin" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+        <Route path="/admin/users/report-detail/:userId" element={<ProtectedRoute><ReportDetailPage /></ProtectedRoute>} />
+        <Route path="/admin/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+        <Route path="/admin/contests" element={<ProtectedRoute><ContestsPage /></ProtectedRoute>} />
+        <Route path="/admin/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
       </Routes>
     </div>
   );
