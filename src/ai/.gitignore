@@ -11,6 +11,8 @@ teamonevenv/
 .env
 models
 /src/ai/app/*.json
+/src/ai/*.json
+*.json
 # ---------------------------
 # OS & Editor junk
 # ---------------------------
