@@ -426,3 +426,130 @@ def evaluate(req: EvalRequest):
     brier = float(((probs - y)**2).mean())
     return {"OK": True, "data": {"model_id": mid, "n": int(len(y)),
             "roc_auc": roc, "pr_auc": pr, "log_loss": logloss, "brier": brier}}
+
+# ====== [ORCHESTRATOR] User-User 매칭 + 수락예측 정렬 ======
+# 요청/스키마: 설명 노출 없이 정렬/확률만 반환
+
+class OrUserFacet(BaseModel):
+    id: Optional[str] = None
+    # 세 개를 개별로 주면 facet 분리하여 임베딩, 비어있으면 profile_text 복제 사용
+    skill_text: Optional[str] = None
+    trait_text: Optional[str] = None
+    activity_text: Optional[str] = None
+    profile_text: Optional[str] = None
+    mbti: Optional[str] = None
+    # 수락예측 피처용(선택): 0~1 스케일로 전처리된 값이면 그대로 사용
+    user_activity_90d: Optional[float] = None
+    user_accept_rate_global: Optional[float] = None
+    user_accept_rate_group: Optional[float] = None
+    offers_last_30d: Optional[float] = None
+    accepts_last_30d: Optional[float] = None
+    # 수락예측 피처용(선택): 성향 확률 딕셔너리
+    trait_probs: Optional[Dict[str, float]] = None
+
+class OrPriority(BaseModel):
+    w1: float = 0.5  # skill
+    w2: float = 0.3  # trait
+    w3: float = 0.2  # activity
+
+class OrCandidate(BaseModel):
+    user_c: OrUserFacet
+    # 후보별로 가중치를 다르게 줄 수도 있음(없으면 req.priority 사용)
+    priority_weights: Optional[OrPriority] = None
+
+class OrchestrateUURequest(BaseModel):
+    user_q: OrUserFacet                # 제안 보낸 사람 A
+    candidates: List[OrCandidate]      # 후보들 B1..Bn
+    priority: OrPriority = OrPriority()# 기본 가중치(1/2/3순위)
+    model_id: Optional[str] = None     # 수락예측 모델 선택(없으면 latest)
+    scale: float = 2.0                 # 매칭 로짓 스케일(가중합*scale -> sigmoid)
+
+def _uu_prep(u: OrUserFacet) -> Tuple[str, str, str]:
+    # None 방어 + facet 프롬프트 링
+    st = str(u.skill_text or u.profile_text or "")
+    tt = str(u.trait_text or u.profile_text or "")
+    at = str(u.activity_text or u.profile_text or "")
+    return f"[SKILL] {st}", f"[TRAIT] {tt}", f"[ACT] {at}"
+
+@torch.no_grad()
+def _uu_encode6(qs: str, qt: str, qa: str, cs: str, ct: str, ca: str) -> List[np.ndarray]:
+    # acceptor 서비스가 이미 가진 sentence-transformers 인코더 재사용
+    vecs = encode_texts([qs, qt, qa, cs, ct, ca])
+    # normalize for cosine
+    def _norm(v):
+        n = np.linalg.norm(v) + 1e-12
+        return (v / n).astype(np.float32)
+    return [_norm(v) for v in vecs]
+
+def _uu_cos(a: np.ndarray, b: np.ndarray) -> float:
+    return float(np.clip((a * b).sum(), -1.0, 1.0))
+
+def _uu_match_scores(user_q: OrUserFacet, user_c: OrUserFacet, w: OrPriority, scale: float) -> Tuple[float, float]:
+    # 3-facet 코사인 + 가중합 → rank_score, matcher_prob
+    qs, qt, qa = _uu_prep(user_q)
+    cs, ct, ca = _uu_prep(user_c)
+    q_s, q_t, q_a, c_s, c_t, c_a = _uu_encode6(qs, qt, qa, cs, ct, ca)
+    s_skill = _uu_cos(q_s, c_s)
+    s_trait = _uu_cos(q_t, c_t)
+    s_act   = _uu_cos(q_a, c_a)
+    weighted = float(w.w1*s_skill + w.w2*s_trait + w.w3*s_act)  # rank_score로 사용
+    logit = float(scale * weighted)
+    prob = safe_sigmoid(logit)                                   # matcher_prob로 사용
+    return weighted, prob
+
+def _pf_from_or(user_q: OrUserFacet, user_c: OrUserFacet,
+                rank_score: float, matcher_prob: float) -> PairFeatures:
+    # 수락예측용 PairFeatures 구성
+    # user_text ← 후보(B) 프로필 / project_text ← 제안자(A) 프로필
+    u_text = user_c.profile_text or user_c.skill_text or user_c.trait_text or user_c.activity_text or ""
+    p_text = user_q.profile_text or user_q.skill_text or user_q.trait_text or user_q.activity_text or ""
+    # 성향 확률 dict가 양쪽에 있으면 피처로 활용
+    trait_user = user_c.trait_probs if user_c.trait_probs else None
+    trait_proj = user_q.trait_probs if user_q.trait_probs else None
+
+    return PairFeatures(
+        user_text=u_text, project_text=p_text,
+        matcher_prob=float(matcher_prob), rank_score=float(rank_score),
+        user_mbti=user_c.mbti or "", project_mbti=user_q.mbti or "",
+        trait_probs_user=trait_user, trait_probs_project=trait_proj,
+        user_activity_90d=user_c.user_activity_90d,
+        user_accept_rate_global=user_c.user_accept_rate_global,
+        user_accept_rate_group=user_c.user_accept_rate_group,
+        offers_last_30d=user_c.offers_last_30d,
+        accepts_last_30d=user_c.accepts_last_30d,
+    )
+
+@app.post("/orchestrate/useruser/rank_and_accept")
+def orchestrate_useruser(req: OrchestrateUURequest):
+    # 1) 수락예측 모델 로드
+    model, meta, mid = get_model(req.model_id)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+    # 2) 후보별 매칭점수(rank_score, matcher_prob) 계산 → PairFeatures 구성
+    pf_list: List[Tuple[str, PairFeatures, float, float]] = []
+    for c in req.candidates:
+        w = c.priority_weights or req.priority
+        rank_score, mprob = _uu_match_scores(req.user_q, c.user_c, w, req.scale)
+        pf = _pf_from_or(req.user_q, c.user_c, rank_score, mprob)
+        cand_id = c.user_c.id or ""
+        pf_list.append((cand_id, pf, rank_score, mprob))
+
+    # 3) 수락예측 모델 추론
+    X = np.stack([vectorize(pf) for (_, pf, _, _) in pf_list]).astype(np.float32)
+    with torch.no_grad():
+        logits = model(torch.from_numpy(X).to(device)).cpu().numpy()
+    probs = 1.0/(1.0+np.exp(-np.clip(logits, -30, 30)))
+
+    # 4) accept_prob 기준 정렬 후 반환(설명 제거)
+    rows = []
+    for (cand_id, _pf, rscore, mprob), logit, prob in zip(pf_list, logits.tolist(), probs.tolist()):
+        rows.append({
+            "candidate_id": cand_id,
+            "rank_score": float(rscore),
+            "match_prob": float(mprob),
+            "accept_logit": float(logit),
+            "accept_prob": float(prob)
+        })
+    rows.sort(key=lambda x: x["accept_prob"], reverse=True)
+    return {"OK": True, "model_id": mid, "data": rows}

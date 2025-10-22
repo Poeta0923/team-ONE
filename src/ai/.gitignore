@@ -10,7 +10,7 @@ data/ datasets/
 teamonevenv/
 .env
 models
-
+/src/ai/app/*.json
 # ---------------------------
 # OS & Editor junk
 # ---------------------------
@@ -112,7 +112,13 @@ results/
 sandbox*_rank*.json
 *_res.json
 payload.json
-
+/src/ai/app/sandbox*_rank*.json
+/src/ai/app/*_res.json
+/src/ai/app/payload.json
+/src/ai/app/req.json
+/src/ai/app/batch.json
+/src/ai/app/score_req.json
+/src/ai/app/train_*.json
 # ---------------------------
 # Packaging / Docker (옵션)
 # ---------------------------

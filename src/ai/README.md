@@ -52,3 +52,23 @@ jq '( .data // [] )
       | ( to_entries
           | sort_by(.value) | reverse | .[:2]
           | map({label:.key, prob:.value}) ) ]' /tmp/sandbox_resp.json
+
+
+<!-- // 배치 스코어, TOP-N 정렬
+curl -sS -X POST http://127.0.0.1:8093/score/batch \
+  -H "Content-Type: application/json" \
+  --data-binary @/tmp/batch_min.json \
+| jq -r '
+  (.data // [])
+  | to_entries
+  | sort_by(.value.prob) | reverse
+  | .[]
+  | [ ("idx:" + (.key|tostring)),
+      .value.prob,
+      .value.weighted_score,
+      .value.facet_scores.skill,
+      .value.facet_scores.trait,
+      .value.facet_scores.activity
+    ] | @tsv
+'
+ -->

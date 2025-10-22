@@ -1,6 +1,0 @@
-{
-  "samples": [
-    { "x": { "matcher_prob": 0.9, "user_mbti": "INTJ", "project_mbti": "ISTJ", "user_activity_90d": 0.7 }, "y": 1 },
-    { "x": { "matcher_prob": 0.1, "user_mbti": "ENFP", "project_mbti": "ISTJ", "user_activity_90d": 0.2 }, "y": 0 }
-  ]
-}

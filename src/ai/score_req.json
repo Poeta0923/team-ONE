@@ -1,9 +1,0 @@
-{
-  "item": {
-    "matcher_prob": 0.8,
-    "user_mbti": "INTJ",
-    "project_mbti": "ISTJ",
-    "user_activity_90d": 0.6
-  },
-  "as_probability": true
-}
