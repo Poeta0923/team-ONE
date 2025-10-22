@@ -118,7 +118,14 @@ payload.json
 /src/ai/app/req.json
 /src/ai/app/batch.json
 /src/ai/app/score_req.json
-/src/ai/app/train_*.json
+/src/ai/train_*.json
+/src/ai/*.json
+src/ai/batch.json
+rc/ai/req.json
+src/ai/score_req.json
+src/ai/train_min.json
+src/ai/train_payload.json
+src/ai/train_req.json
 # ---------------------------
 # Packaging / Docker (옵션)
 # ---------------------------
