@@ -32,9 +32,19 @@ router.get('/', verifyToken, (req, res)=>{
 })
 
 // [2] [PATCH] /api/myPage/profile/edit 경로 정의
-router.patch('/api/myPage/profile/edit', verifyToken, (req, res)=>{
+router.patch('/profile/edit', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    
     logger.info(`PATCH /api/myPage/profile/edit - User: ${req.user ? req.user.userid : 'N/A'}`);
+
+    // editProfile.editProfile 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     editProfile.editProfile(req, res);
+})
+
+// [3] [PATCH] /api/myPage/resume/edit 경로 정의
+router.patch('/resume/edit', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`PATCH /api/myPage/resume/edit - User: ${req.user ? req.user.userid : 'N/A'}`);
+
+    // editResume.editResume 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
+    editResume.editResume(req, res);
 })
