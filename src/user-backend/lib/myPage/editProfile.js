@@ -58,16 +58,14 @@ module.exports = {
             const sanitizedPost = sanitize.sanitizeObject(req.body);
 
             // [2] SQL 쿼리 정의
-            const sqlEditProfile = `UPDATE users SET name = ?, birth = ?, phoneNumber = ?, address = ?, job = ?, mbti = ? WHERE userId = ?`;
+            const sqlEditProfile = `UPDATE users SET birth = ?, phoneNumber = ?, nickName = ?, job = ? WHERE userId = ?`;
             const sqlProfile = `SELECT * FROM users WHERE userId = ?`;
 
             const profileValues = [
-                sanitizedPost.name,
                 sanitizedPost.birth,
                 sanitizedPost.phoneNumber,
-                sanitizedPost.address,
+                sanitizedPost.nickName,
                 sanitizedPost.job,
-                sanitizedPost.mbti,
                 userIdFromToken
             ];
             const userValue = [userIdFromToken];
