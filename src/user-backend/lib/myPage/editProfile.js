@@ -45,7 +45,7 @@ module.exports = {
     /**
      * @description 프로필 수정 후 해당 프로필 정보 반환
      */
-    edit: async (req, res) => {
+    editProfile: async (req, res) => {
         let connection; 
 
         try {
