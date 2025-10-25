@@ -53,4 +53,7 @@ public class User {
     //계정 생성 날짜 및 시간
     @Column(nullable = false)
     private LocalDateTime date;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Resume resume;
 }

@@ -45,6 +45,11 @@ dependencies {
 
 	// mariadb 연결
 	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+	// Swagger - 버전을 직접 명시하는 가장 단순한 방식으로 변경
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+	//데이터 검사 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {
