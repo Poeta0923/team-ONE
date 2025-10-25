@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 """
+성향분석
 Personality / Trait Analysis Trainer API (Multi‑Label Text Classifier)
 - Depends on: fastapi, uvicorn, pydantic, torch, sentence-transformers, numpy
 - Uses the latest embedding model saved under ./models/embeddings/latest (same convention as your embedding service)
