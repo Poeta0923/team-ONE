@@ -1,6 +1,9 @@
 package com.teammatching.admin.user.repository;
 
+import com.teammatching.admin.user.domain.Role;
 import com.teammatching.admin.user.domain.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -11,4 +14,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     // 2. 테스트용 계정 생성을 위해 ID(String 타입) 존재 여부를 확인하는 메소드
     boolean existsById(String id);
+    
+    // 3. Role을 기준으로 페이징하여 사용자만 찾아내게 하기 위한 메소드 
+    Page<User> findByRole(Role role, Pageable pageable);
 }
