@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드 (사용자 입력을 req.body로 가져오기 위함)
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 객체를 가져옴)
 const db = require('./util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -42,7 +40,7 @@ module.exports = {
         logger.info(`[MyPage Access] 사용자 ID: ${userIdFromToken}의 마이페이지 조회 시작`);
 
         // [1] SQL 쿼리 정의
-        const sqlProfile = `SELECT * FROM user WHERE userId = ?`; 
+        const sqlProfile = `SELECT * FROM users WHERE userId = ?`; 
         const sqlResume = `SELECT * FROM resumes WHERE userId = ?`;
 
         const userValue = [userIdFromToken];
