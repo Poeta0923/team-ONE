@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드 (필요 없지만 일관성을 위해 유지)
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -50,12 +48,11 @@ module.exports = {
             p.type,
             p.contestId,
             p.category,
-            p.require,
+            p.tech_stack,
             p.recruitment,
-            p.explain,
+            p.description,
             p.statement,
             p.date,
-            p.status, -- 프로젝트 상태 필드 추가
             COALESCE(m_count.member_count, 0) AS member_count,
             COALESCE(l_count.like_count, 0) AS like_count
         FROM
@@ -67,7 +64,7 @@ module.exports = {
             FROM
                 members
             WHERE
-                state = '참여' -- 현재 '참여' 중인 멤버만 카운트
+                state = '참여'
             GROUP BY
                 projectId
         ) m_count ON p.projectId = m_count.projectId
@@ -76,7 +73,7 @@ module.exports = {
                 projectId,
                 COUNT(likeId) AS like_count
             FROM
-                \`like\` -- LIKE는 SQL 예약어일 가능성이 높아 백틱(\`) 사용
+                \`like\`
             GROUP BY
                 projectId
         ) l_count ON p.projectId = l_count.projectId
