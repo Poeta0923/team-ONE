@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드 (필요 없지만 일관성을 위해 유지)
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -58,10 +56,10 @@ module.exports = {
             const sanitizedPost = sanitize.sanitizeObject(req.body);
 
             // [2] SQL 쿼리 정의
-            const sqlCheckOwner = `SELECT member FROM members WHERE projectId = ? AND role = '팀장' AND member = ?`; // 팀장 권한 확인
+            const sqlCheckOwner = `SELECT member FROM members WHERE projectId = ? AND role = '팀장' AND member = ?`;
             const sqlContest = `SELECT contestId FROM contests WHERE name = ?`;
             const sqlNewContest = `INSERT INTO contests (name) VALUES (?)`;
-            const sqlPatchProjects = `UPDATE projects SET name = ?, type = ?, contestId = ?, category = ?, require = ?, recruitment = ?, explain = ? WHERE projectId = ?`;
+            const sqlPatchProjects = `UPDATE projects SET name = ?, type = ?, contestId = ?, category = ?, tech_stack = ?, recruitment = ?, description = ? WHERE projectId = ?`;
             const sqlPatchedProject = `SELECT * FROM projects WHERE projectId = ?`;
 
             const checkOwnerValues = [projectId, userIdFromToken];
@@ -108,11 +106,11 @@ module.exports = {
                 sanitizedPost.type,
                 contestId,
                 sanitizedPost.category,
-                sanitizedPost.require,
+                sanitizedPost.techStack,
                 sanitizedPost.recruitment,
-                sanitizedPost.explain,
+                sanitizedPost.description,
                 projectId
-            ];
+];
             const result2 = await connectionQueryPromise(connection, sqlPatchProjects, projectValues);
             
             if (result2.affectedRows === 0) {
@@ -139,7 +137,7 @@ module.exports = {
             // [6] 오류 처리 및 롤백
             if (connection) {
                 // 오류 발생 시 트랜잭션 롤백
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection);
                 logger.warn(`[Project Rollback] 프로젝트 수정 중 오류로 롤백 실행됨.`);
             }
 
