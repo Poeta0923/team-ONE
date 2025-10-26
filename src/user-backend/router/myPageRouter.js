@@ -15,8 +15,14 @@ const verifyToken = require('../lib/util/authMiddleware');
 // 2. Library Js Files Routing (외부 모듈/컨트롤러 로드)
 // =================================================================
 
-// [1] 공모전 정보 요청 모듈 호출
+// [1] 마이페이지 정보 요청 모듈 호출
 const myPage = require('../lib/myPage');
+
+// [2] 프로필 수정 요청 모듈 호출
+const editProfile = require('../lib/myPage/editProfile');
+
+// [3] 이력서 수정 요청 모듈 호출
+const editResume = require('../lib/myPage/editResume');
 
 // =================================================================
 // 3. API Route Endpoints Definition
