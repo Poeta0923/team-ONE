@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드 (필요 없지만 일관성을 위해 유지)
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -12,7 +10,6 @@ const logger = require('../util/logger');
 const sanitize = require('../util/sanitize');
 // Node.js의 util 모듈 로드 (Promisify 사용을 위해)
 const util = require('util');
-
 
 // =================================================================
 // 2. Utility Functions (트랜잭션 처리를 위해 재정의)
@@ -43,7 +40,7 @@ const connectionQueryPromise = (connection, sql, values) => {
 
 module.exports = {
     /**
-     * @description 이력서 수정 후 해당 프로필 정보 반환
+     * @description 이력서 수정 후 해당 이력서 정보 반환
      */
     editResume: async (req, res) => {
         let connection; 
@@ -54,11 +51,17 @@ module.exports = {
             logger.info(`[Resume Edit] 사용자 ID: ${userIdFromToken}의 이력서 수정 시작`);
 
             // [1] 사용자 입력 추출 및 Sanitization
-            // Note: DB 테이블 이름이 'users'가 아닌 'user'라면 쿼리를 수정해야 합니다. 현재는 'users'로 가정합니다.
             const sanitizedPost = sanitize.sanitizeObject(req.body);
+
+            // [1-1] AI 전용 기술 스택 가공
+            // 회원가입 시 techStacks에 저장된 로직과 일관성을 유지하기 위함
+            const aiTechStack = sanitizedPost.techStack
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase();
 
             // [2] SQL 쿼리 정의
             const sqlEditResume = `UPDATE resumes SET address = ?, mbti = ?, workStyle = ?, workTime = ?, techStack = ?, interest = ?, gitHub = ?, blog = ?, projectExp = ?, coverLetter = ? WHERE userId = ?`;
+            const sqlUpdateTechStack = `UPDATE techStacks SET techStack = ? WHERE userId = ?`;
             const sqlResume = `SELECT * FROM resumes WHERE userId = ?`;
 
             const ResumeValues = [
@@ -66,12 +69,17 @@ module.exports = {
                 sanitizedPost.mbti,
                 sanitizedPost.workStyle,
                 sanitizedPost.workTime,
-                sanitizedPost.techStack,
+                sanitizedPost.techStack, // 원본 기술 스택 (resumes 테이블)
                 sanitizedPost.interest,
                 sanitizedPost.gitHub,
                 sanitizedPost.blog,
                 sanitizedPost.projectExp,
                 sanitizedPost.coverLetter,
+                userIdFromToken
+            ];
+            
+            const techStackValues = [
+                aiTechStack, // 가공된 기술 스택 (techStacks 테이블)
                 userIdFromToken
             ];
             const userValue = [userIdFromToken];
@@ -80,7 +88,7 @@ module.exports = {
             connection = await util.promisify(db.getConnection).call(db); 
             await util.promisify(connection.beginTransaction).call(connection);
 
-            // [4] 이력서 정보 수정 (users 테이블)
+            // [4-1] 이력서 정보 수정 (resumes 테이블)
             const result1 = await connectionQueryPromise(connection, sqlEditResume, ResumeValues);
 
             // UPDATE가 실제로 이루어졌는지 확인 (affectedRows가 0이면 해당 유저가 DB에 없다는 의미)
@@ -88,25 +96,28 @@ module.exports = {
                  throw new Error('NOT_FOUND: 수정할 사용자 이력서를 찾을 수 없습니다.');
             }
             
+            // [4-2] AI 전용 기술 스택 수정 (techStacks 테이블)
+            await connectionQueryPromise(connection, sqlUpdateTechStack, techStackValues);
+
             // 모든 작업 성공 시 트랜잭션 커밋
             await util.promisify(connection.commit).call(connection);
 
             // [4-3] 수정된 이력서 정보 조회
             const result2 = await connectionQueryPromise(connection, sqlResume, userValue);
-            const patchedResume = result2.length > 0 ? result2[0] : null;
+            const patchedResume = result2.length > 0 ? result2[0] : null; 
 
             // [5] 최종 응답 전송
             logger.info(`[Resume Success] 유저 ID: ${userIdFromToken} 수정 완료`);
             res.status(200).json({
                 message: 'Resume updated successfully',
-                Resume: patchedResume
+                resume: patchedResume
             });
 
         } catch (error) {
             // [6] 오류 처리 및 롤백
             if (connection) {
                 // 오류 발생 시 트랜잭션 롤백
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection);
                 logger.warn(`[Resume Rollback] 이력서 수정 중 오류로 롤백 실행됨.`);
             }
 
@@ -120,7 +131,7 @@ module.exports = {
             if (error.message.includes('NOT_FOUND')) {
                 statusCode = 404;
                 displayMessage = error.message.replace('NOT_FOUND: ', '');
-            } else if (error.message.includes('AUTH_FAILED')) {
+            } else if (error.message.includes('AUTH_FAILED')) { 
                 statusCode = 403;
                 displayMessage = '이력서를 수정할 권한이 없습니다. 본인만 수정할 수 있습니다.';
             }
