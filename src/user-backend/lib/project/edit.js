@@ -107,7 +107,7 @@ module.exports = {
                 contestId,
                 sanitizedPost.category,
                 sanitizedPost.techStack,
-                sanitizedPost.recruitment,
+                parseInt(sanitizedPost.recruitment, 10),
                 sanitizedPost.description,
                 projectId
 ];
