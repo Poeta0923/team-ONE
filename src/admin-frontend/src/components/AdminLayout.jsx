@@ -10,16 +10,19 @@ const AdminLayout = ({ children }) => {
   // 현재 경로에 따라 activeMenu 설정
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/admin') {
+    if (path === '/admin' || path === '/admin/') {
       setCurrentMenu('dashboard');
-    } else if (path === '/admin/users') {
+    } else if (path.startsWith('/admin/users')) {
       setCurrentMenu('users');
-    } else if (path === '/admin/projects') {
+    } else if (path.startsWith('/admin/projects')) {
       setCurrentMenu('projects');
-    } else if (path === '/admin/contests') {
+    } else if (path.startsWith('/admin/contests')) {
       setCurrentMenu('contests');
-    } else if (path === '/admin/ai') {
+    } else if (path.startsWith('/admin/ai')) {
       setCurrentMenu('ai');
+    } else {
+      // 기본값은 대시보드
+      setCurrentMenu('dashboard');
     }
   }, [location.pathname]);
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_ENDPOINTS, getAuthHeaders } from '../../../utils/api';
+import { fetchAllUsers } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const AllUsersList = () => {
@@ -9,54 +9,29 @@ const AllUsersList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
 
-  // TODO: 여기에 API 필요합니다 - 전체 회원 조회 API
   useEffect(() => {
-    fetchUsers(currentPage);
+    loadUsers(currentPage);
   }, [currentPage]);
 
-  const fetchUsers = async (page) => {
+  const loadUsers = async (page) => {
     setLoading(true);
     
-    // 임시 데이터
-    setTimeout(() => {
-      const mockUsers = Array.from({ length: 10 }, (_, index) => ({
-        id: (page - 1) * 10 + index + 1,
-        name: `김OO${(page - 1) * 10 + index + 1}`,
-        nickName: `닉네임${(page - 1) * 10 + index + 1}`,
-        techStack: 'React, Spring',
-        phoneNumber: '010-1234-5678',
-        birth: '1999-07-21',
-        address: '경기 고양시'
-      }));
-
-      setUsers(mockUsers);
-      setTotalPages(5);
-      setTotalElements(50);
-      setLoading(false);
-    }, 500);
-
-    /* 실제 API 호출 예시
     try {
-      const response = await fetch(`${API_ENDPOINTS.USERS_ALL}?page=${page}&size=10`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const result = await fetchAllUsers(page, 10);
       
-      const data = await response.json();
-      
-      if (data.result_code === 200) {
-        setUsers(data.data.users);
-        setTotalPages(data.data.totalPages);
-        setTotalElements(data.data.totalElements);
+      if (result.success) {
+        setUsers(result.data);
+        setTotalElements(result.total);
+        // 페이지 계산 (총 개수 / 페이지당 개수)
+        setTotalPages(Math.ceil(result.total / 10));
       } else {
         console.error('전체 회원 조회 실패');
       }
-      setLoading(false);
     } catch (error) {
       console.error('전체 회원 조회 실패:', error);
+    } finally {
       setLoading(false);
     }
-    */
   };
 
   if (loading) {

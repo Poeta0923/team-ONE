@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, getAuthHeaders } from '../../../utils/api';
+import { fetchReportedUsers } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const ReportedUsersList = () => {
@@ -11,53 +11,28 @@ const ReportedUsersList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
 
-  // TODO: 여기에 API 필요합니다 - 신고된 회원 목록 조회 API
   useEffect(() => {
-    fetchReportedUsers(currentPage);
+    loadReportedUsers(currentPage);
   }, [currentPage]);
 
-  const fetchReportedUsers = async (page) => {
+  const loadReportedUsers = async (page) => {
     setLoading(true);
     
-    // 임시 데이터
-    setTimeout(() => {
-      const mockReports = Array.from({ length: 10 }, (_, index) => ({
-        reportId: (page - 1) * 10 + index + 1,
-        reporterName: `신고자${(page - 1) * 10 + index + 1}`,
-        reportedName: `피신고자${(page - 1) * 10 + index + 1}`,
-        reason: '시간 약속을 안 지킴',
-        createdAt: '2025-09-30T14:00:00Z',
-        status: index % 2 === 0 ? 'pending' : 'resolved'
-      }));
-
-      setReports(mockReports);
-      setTotalPages(3);
-      setTotalElements(25);
-      setLoading(false);
-    }, 500);
-
-    /* 실제 API 호출 예시
     try {
-      const response = await fetch(`${API_ENDPOINTS.USERS_REPORTED}?page=${page}&size=10`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const result = await fetchReportedUsers(page, 10);
       
-      const data = await response.json();
-      
-      if (data.result_code === 200) {
-        setReports(data.data.reports);
-        setTotalPages(data.data.totalPages);
-        setTotalElements(data.data.totalElements);
+      if (result.success) {
+        setReports(result.data);
+        setTotalElements(result.total);
+        setTotalPages(Math.ceil(result.total / 10));
       } else {
         console.error('신고된 회원 조회 실패');
       }
-      setLoading(false);
     } catch (error) {
       console.error('신고된 회원 조회 실패:', error);
+    } finally {
       setLoading(false);
     }
-    */
   };
 
   const handleMoreClick = (reportId) => {

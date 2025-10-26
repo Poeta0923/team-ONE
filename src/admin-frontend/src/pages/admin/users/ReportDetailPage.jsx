@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/AdminLayout';
-import { API_ENDPOINTS, getAuthHeaders } from '../../../utils/api';
+import { fetchUserReportDetail, banUser, unbanUser } from '../../../utils/api';
 import './ReportDetailPage.css';
 
 const ReportDetailPage = () => {
@@ -14,71 +14,29 @@ const ReportDetailPage = () => {
   const [blockReason, setBlockReason] = useState('');
   const [showBlockInput, setShowBlockInput] = useState(false);
 
-  // TODO: 여기에 API 필요합니다 - 특정 회원의 신고 내역 조회 API
   useEffect(() => {
-    fetchUserReports();
+    loadUserReports();
   }, [userId]);
 
-  const fetchUserReports = async () => {
+  const loadUserReports = async () => {
     setLoading(true);
     
-    // 임시 데이터
-    setTimeout(() => {
-      setUserInfo({
-        userId: userId,
-        name: '김철수',
-        nickName: '코딩마스터',
-        status: 'active' // active, banned
-      });
-
-      setReports([
-        {
-          id: 1,
-          reporterName: '홍길동',
-          reason: '시간 약속을 안 지킴',
-          createdAt: '2025-09-30T14:00:00Z'
-        },
-        {
-          id: 2,
-          reporterName: '박영희',
-          reason: '욕설 및 비방',
-          createdAt: '2025-09-29T10:30:00Z'
-        },
-        {
-          id: 3,
-          reporterName: '이민수',
-          reason: '프로젝트 무단 이탈',
-          createdAt: '2025-09-28T16:20:00Z'
-        }
-      ]);
-
-      setLoading(false);
-    }, 500);
-
-    /* 실제 API 호출 예시
     try {
-      const response = await fetch(API_ENDPOINTS.USER_REPORT_DETAIL(userId), {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+      const result = await fetchUserReportDetail(userId);
       
-      const data = await response.json();
-      
-      if (data.result_code === 200) {
-        setUserInfo(data.data.user);
-        setReports(data.data.reports);
+      if (result.success) {
+        setUserInfo(result.data.user);
+        setReports(result.data.reports);
       } else {
         console.error('신고 내역 조회 실패');
       }
-      setLoading(false);
     } catch (error) {
       console.error('신고 내역 조회 실패:', error);
+    } finally {
       setLoading(false);
     }
-    */
   };
 
-  // TODO: 여기에 API 필요합니다 - 회원 차단 API
   const handleBlock = async () => {
     if (!blockReason.trim()) {
       alert('차단 사유를 입력해주세요.');
@@ -89,73 +47,41 @@ const ReportDetailPage = () => {
       return;
     }
 
-    // 임시 처리
-    alert('회원이 차단되었습니다.');
-    setUserInfo({ ...userInfo, status: 'banned' });
-    setShowBlockInput(false);
-    setBlockReason('');
-
-    /* 실제 API 호출 예시
     try {
-      const response = await fetch(API_ENDPOINTS.USER_BAN(userId), {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          status: 'banned',
-          reason: blockReason
-        })
-      });
+      const result = await banUser(userId, blockReason);
       
-      const data = await response.json();
-      
-      if (data.result_code === 200) {
-        alert(data.successMessage || '회원이 차단되었습니다.');
+      if (result.success) {
+        alert(result.message || '회원이 차단되었습니다.');
         setUserInfo({ ...userInfo, status: 'banned' });
         setShowBlockInput(false);
         setBlockReason('');
       } else {
-        alert(data.errorMessage || '회원 차단에 실패했습니다.');
+        alert(result.message || '회원 차단에 실패했습니다.');
       }
     } catch (error) {
       console.error('회원 차단 실패:', error);
       alert('회원 차단에 실패했습니다.');
     }
-    */
   };
 
-  // TODO: 여기에 API 필요합니다 - 회원 차단 해제 API
   const handleUnblock = async () => {
     if (!confirm('정말로 이 회원의 차단을 해제하시겠습니까?')) {
       return;
     }
 
-    // 임시 처리
-    alert('차단이 해제되었습니다.');
-    setUserInfo({ ...userInfo, status: 'active' });
-
-    /* 실제 API 호출 예시
     try {
-      const response = await fetch(API_ENDPOINTS.USER_UNBAN(userId), {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          status: 'active'
-        })
-      });
+      const result = await unbanUser(userId);
       
-      const data = await response.json();
-      
-      if (data.result_code === 200) {
-        alert(data.successMessage || '차단이 해제되었습니다.');
+      if (result.success) {
+        alert(result.message || '차단이 해제되었습니다.');
         setUserInfo({ ...userInfo, status: 'active' });
       } else {
-        alert(data.errorMessage || '차단 해제에 실패했습니다.');
+        alert(result.message || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
       console.error('차단 해제 실패:', error);
       alert('차단 해제에 실패했습니다.');
     }
-    */
   };
 
   const handleBack = () => {
@@ -196,6 +122,29 @@ const ReportDetailPage = () => {
           </div>
         </div>
 
+        {/* 회원 기본 정보 */}
+        <div className="user-info-section">
+          <h3>회원 정보</h3>
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="info-label">이메일:</span>
+              <span className="info-value">{userInfo?.email}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">전화번호:</span>
+              <span className="info-value">{userInfo?.phoneNumber || '정보 없음'}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">사용자명:</span>
+              <span className="info-value">{userInfo?.username}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">가입일:</span>
+              <span className="info-value">{userInfo?.createdAt}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="reports-section">
           <h3>받은 신고 내역 ({reports.length}건)</h3>
           <div className="reports-list">
@@ -208,12 +157,14 @@ const ReportDetailPage = () => {
                   </div>
                   <div className="report-row">
                     <span className="report-label">신고 사유:</span>
-                    <span className="report-value">{report.reason}</span>
+                    <span className="report-value report-reason">{report.reason}</span>
                   </div>
-                  <div className="report-row">
-                    <span className="report-label">신고 시간:</span>
-                    <span className="report-value">{formatDateTime(report.createdAt)}</span>
-                  </div>
+                  {report.description && (
+                    <div className="report-row report-description-row">
+                      <span className="report-label">상세 내용:</span>
+                      <span className="report-value report-description">{report.description}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
