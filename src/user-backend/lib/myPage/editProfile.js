@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드 (필요 없지만 일관성을 위해 유지)
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -100,7 +98,7 @@ module.exports = {
             // [6] 오류 처리 및 롤백
             if (connection) {
                 // 오류 발생 시 트랜잭션 롤백
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection);
                 logger.warn(`[Profile Rollback] 프로필 수정 중 오류로 롤백 실행됨.`);
             }
 
