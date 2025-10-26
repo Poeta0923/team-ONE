@@ -2,6 +2,9 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
+// .env 파일의 환경 변수를 process.env로 로드
+require('dotenv').config();
+
 // Express 프레임워크 로드
 const express = require('express');
 // HTTP 요청 본문 파싱 미들웨어 로드 (HTML 폼 데이터 처리)
