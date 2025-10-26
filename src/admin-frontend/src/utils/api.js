@@ -7,7 +7,6 @@ const getApiBaseUrl = () => {
   }
   
   // 프로덕션 환경 (npm run build)
-  // 여기에 학교 서버 주소를 입력하세요
   return 'http://your-school-server.com:port/app';
 };
 
