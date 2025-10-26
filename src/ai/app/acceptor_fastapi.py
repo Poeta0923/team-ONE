@@ -36,6 +36,54 @@ except Exception:
 _emb_model = None
 _emb_path: Optional[str] = None
 
+#유틸 추가 (신뢰도 bin, ECE/MCE)
+def make_reliability_bins(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10):
+    """
+    y_true: [N] in {0,1}
+    y_prob: [N] in [0,1]
+    return: dict with per-bin stats for reliability diagram
+    """
+    assert y_true.shape == y_prob.shape
+    bins = np.linspace(0.0, 1.0, n_bins + 1)
+    idx = np.digitize(y_prob, bins) - 1
+    idx = np.clip(idx, 0, n_bins - 1)
+
+    bin_stats = []
+    ece = 0.0
+    mce = 0.0
+    N = len(y_true)
+
+    for b in range(n_bins):
+        mask = (idx == b)
+        cnt = int(mask.sum())
+        if cnt == 0:
+            bin_stats.append({
+                "bin": b,
+                "count": 0,
+                "conf_avg": 0.0,
+                "acc": 0.0
+            })
+            continue
+        conf_avg = float(y_prob[mask].mean())
+        acc = float(y_true[mask].mean())
+        w = cnt / max(1, N)
+        ece += w * abs(acc - conf_avg)
+        mce = max(mce, abs(acc - conf_avg))
+        bin_stats.append({
+            "bin": b,
+            "count": cnt,
+            "conf_avg": conf_avg,
+            "acc": acc
+        })
+
+    return {
+        "bins": bins.tolist(),
+        "per_bin": bin_stats,
+        "ECE": float(ece),
+        "MCE": float(mce)
+    }
+
+
 def latest_embedding_path() -> str:
     if os.path.islink(EMB_LATEST):
         return os.readlink(EMB_LATEST)

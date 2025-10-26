@@ -72,3 +72,6 @@ curl -sS -X POST http://127.0.0.1:8093/score/batch \
     ] | @tsv
 '
  -->
+
+<!-- 후보생성 모델 정확도
+curl -s http://localhost:8091/train/evaluate_candidate_demo   -H "Content-Type: application/json"   -d '{"n_candidates":100,"n_queries":500,"k":4,"metric":"cosine","bins":30,"seed":42}' | jq . -->
