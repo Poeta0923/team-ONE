@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -59,7 +57,7 @@ module.exports = {
             // [2] SQL 쿼리 정의
             const sqlContest = `SELECT contestId FROM contests WHERE name = ?`;
             const sqlNewContest = `INSERT INTO contests (name) VALUES (?)`;
-            const sqlProjects = `INSERT INTO projects (name, type, contestId, category, require, recruitment, explain, statement) VALUES (?, ?, ?, ?, ?, ?, ?, "모집중")`;
+            const sqlProjects = `INSERT INTO projects (name, type, contestId, category, tech_stack, recruitment, description, statement) VALUES (?, ?, ?, ?, ?, ?, ?, "모집중")`;
             const sqlMembers = `INSERT INTO members (projectId, member, role, state) VALUES (?, ?, "팀장", "참여")`;
             const sqlNewProject = `SELECT * FROM projects WHERE projectId = ?`;
 
@@ -88,6 +86,7 @@ module.exports = {
                 if (result1 && result1.length > 0) {
                     contestId = result1[0].contestId;
                 } else {
+                    // 공모전이 없으면 롤백 전에 명시적으로 오류 발생
                     throw new Error(`선택된 공모전(${sanitizedPost.contestName})이 DB에 존재하지 않아 프로젝트를 생성할 수 없습니다. (데이터 오류)`);
                 }
             }
@@ -96,11 +95,11 @@ module.exports = {
             const projectValues = [
                 sanitizedPost.name,
                 sanitizedPost.type,
-                contestId, // 획득한 contestId 사용
+                contestId, 
                 sanitizedPost.category,
-                sanitizedPost.require,
+                sanitizedPost.techStack,
                 sanitizedPost.recruitment,
-                sanitizedPost.explain
+                sanitizedPost.description
             ];
             const result2 = await connectionQueryPromise(connection, sqlProjects, projectValues);
             const newProjectId = result2.insertId;
@@ -117,7 +116,7 @@ module.exports = {
 
             // [4-4] 생성된 프로젝트 정보 조회
             const newProjectValue = [newProjectId];
-            const result3 = await connectionQueryPromise(connection, sqlNewProject, newProjectValue);
+            const result3 = await connectionQueryPromise(connection, sqlNewProject, newProjectValue); 
             const newProject = result3[0];
 
             // [5] 최종 응답 전송
@@ -131,13 +130,13 @@ module.exports = {
             // [6] 오류 처리 및 롤백
             if (connection) {
                 // 오류 발생 시 트랜잭션 롤백
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection); 
                 logger.warn(`[Project Rollback] 프로젝트 생성 중 오류로 롤백 실행됨.`);
             }
 
             logger.error(`[Create Error] 프로젝트 생성 처리 중 오류 발생: ${error.message}`, error);
             
-            // 클라이언트에게 오류 메시지 반환 (catch 블록에서 명시적으로 throw한 오류 메시지 사용)
+            // 클라이언트에게 오류 메시지 반환
             const displayMessage = error.message.includes('존재하지 않아') ? error.message : '프로젝트 생성 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
             res.status(500).json({ message: displayMessage });
             
