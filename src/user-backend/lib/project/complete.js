@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -53,7 +51,7 @@ module.exports = {
 
             // [1] SQL 정의
             const sqlCheckOwner = `SELECT member FROM members WHERE projectId = ? AND role = '팀장' AND member = ?`;
-            const sqlComplete = `UPDATE projects SET status = '완료' WHERE projectId = ?`;
+            const sqlComplete = `UPDATE projects SET statement = '완료' WHERE projectId = ?`;
 
             const checkOwnerValues = [projectId, userIdFromToken];
             const completeValue = [projectId];
@@ -83,13 +81,13 @@ module.exports = {
             // [4] 최종 응답 전송
             logger.info('[Project Complete] 프로젝트 완료 처리 성공');
             res.status(200).json({
-                message: 'Contest complete successfully',
+                message: 'Project complete successfully',
             });
 
         } catch (error) {
             // [5] 오류 처리 및 롤백
             if (connection) {
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection); 
                 logger.warn(`[Project Rollback] 프로젝트 완료 중 오류로 롤백 실행됨.`);
             }
 
