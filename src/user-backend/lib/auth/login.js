@@ -35,8 +35,8 @@ module.exports = {
         // [1] 사용자 입력 추출 및 Sanitization
         const post = req.body;
         // 사용자 ID와 비밀번호를 HTML 태그 및 위험 문자로부터 정제
-        const sntzedId = sanitizeHtml(post.id); 
-        const sntzedPassword = sanitizeHtml(post.password);
+        const sntzedId = post.id; 
+        const sntzedPassword = post.password;
         
         logger.debug(`[Login] ${post.id} 로그인 시도`);
 
@@ -94,6 +94,7 @@ module.exports = {
                             // [5-2] 비밀번호 불일치
                             logger.debug(`[Login Failed] 비밀번호 불일치. 시도 ID: ${user.userId}`);
                             res.status(401).json({ message: 'Invalid credentials' });
+                            return;
                         }
                     });
 
@@ -101,6 +102,7 @@ module.exports = {
                     // [3-2] 사용자 ID가 DB에 없음
                     logger.debug(`[Login Failed] 해당 ID의 계정 없음. 시도 ID: ${post.id}`);
                     res.status(401).json({ message: 'Invalid credentials' });
+                    return;
                 }
             }
         )
