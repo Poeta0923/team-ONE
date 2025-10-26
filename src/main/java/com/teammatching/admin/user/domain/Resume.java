@@ -47,7 +47,6 @@ public class Resume {
     @Column(nullable = false)
     private boolean projectExp;
 
-    @Lob // 자기소개서처럼 매우 긴 텍스트를 위한 설정
     @Column(nullable = false)
     private String coverLetter;
 }
