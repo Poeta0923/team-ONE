@@ -2,8 +2,6 @@
 // 1. Core Modules & Configuration
 // =================================================================
 
-// HTTP 요청 본문 파싱 미들웨어 로드
-const bodyParser = require('body-parser');
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
 const db = require('../util/db');
 // 프로젝트 전역 로거 (Winston) 로드
@@ -97,7 +95,7 @@ module.exports = {
         } catch (error) {
             // [5] 오류 처리 및 롤백
             if (connection) {
-                await util.promisify(connection.rollback).call(connection, () => {}); 
+                await util.promisify(connection.rollback).call(connection);
                 logger.warn(`[Project Rollback] 프로젝트 삭제 중 오류로 롤백 실행됨.`);
             }
 
