@@ -47,8 +47,8 @@ app.use('/api/myPage', myPageRouter);
 // 4. Server Initialization
 // =================================================================
 
-const PORT = 60002;
-const HOST = '0.0.0.0'; // 모든 네트워크 인터페이스에서 접근 허용 (배포 환경 표준)
+const PORT = process.env.PORT || 60002;
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
     // Winston logger를 사용하여 서버 시작 정보 기록
