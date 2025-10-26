@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS, getAuthHeaders } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const AllUsersList = () => {
@@ -36,12 +37,20 @@ const AllUsersList = () => {
 
     /* 실제 API 호출 예시
     try {
-      const response = await fetch(`/api/admin/users?page=${page}&size=10`);
+      const response = await fetch(`${API_ENDPOINTS.USERS_ALL}?page=${page}&size=10`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
       const data = await response.json();
       
-      setUsers(data.data.users);
-      setTotalPages(data.data.totalPages);
-      setTotalElements(data.data.totalElements);
+      if (data.result_code === 200) {
+        setUsers(data.data.users);
+        setTotalPages(data.data.totalPages);
+        setTotalElements(data.data.totalElements);
+      } else {
+        console.error('전체 회원 조회 실패');
+      }
       setLoading(false);
     } catch (error) {
       console.error('전체 회원 조회 실패:', error);

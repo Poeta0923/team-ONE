@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/AdminLayout';
+import { API_ENDPOINTS, getAuthHeaders } from '../../../utils/api';
 import './ReportDetailPage.css';
 
 const ReportDetailPage = () => {
@@ -56,11 +57,19 @@ const ReportDetailPage = () => {
 
     /* 실제 API 호출 예시
     try {
-      const response = await fetch(`/api/admin/users/${userId}/reports`);
+      const response = await fetch(API_ENDPOINTS.USER_REPORT_DETAIL(userId), {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
       const data = await response.json();
       
-      setUserInfo(data.data.user);
-      setReports(data.data.reports);
+      if (data.result_code === 200) {
+        setUserInfo(data.data.user);
+        setReports(data.data.reports);
+      } else {
+        console.error('신고 내역 조회 실패');
+      }
       setLoading(false);
     } catch (error) {
       console.error('신고 내역 조회 실패:', error);
@@ -88,11 +97,9 @@ const ReportDetailPage = () => {
 
     /* 실제 API 호출 예시
     try {
-      const response = await fetch(`/api/admin/users/${userId}/ban`, {
+      const response = await fetch(API_ENDPOINTS.USER_BAN(userId), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           status: 'banned',
           reason: blockReason
@@ -102,10 +109,12 @@ const ReportDetailPage = () => {
       const data = await response.json();
       
       if (data.result_code === 200) {
-        alert(data.successMessage);
+        alert(data.successMessage || '회원이 차단되었습니다.');
         setUserInfo({ ...userInfo, status: 'banned' });
         setShowBlockInput(false);
         setBlockReason('');
+      } else {
+        alert(data.errorMessage || '회원 차단에 실패했습니다.');
       }
     } catch (error) {
       console.error('회원 차단 실패:', error);
@@ -126,11 +135,9 @@ const ReportDetailPage = () => {
 
     /* 실제 API 호출 예시
     try {
-      const response = await fetch(`/api/admin/users/${userId}/unban`, {
+      const response = await fetch(API_ENDPOINTS.USER_UNBAN(userId), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           status: 'active'
         })
@@ -139,8 +146,10 @@ const ReportDetailPage = () => {
       const data = await response.json();
       
       if (data.result_code === 200) {
-        alert(data.successMessage);
+        alert(data.successMessage || '차단이 해제되었습니다.');
         setUserInfo({ ...userInfo, status: 'active' });
+      } else {
+        alert(data.errorMessage || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
       console.error('차단 해제 실패:', error);

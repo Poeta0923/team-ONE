@@ -1,11 +1,35 @@
 // API 기본 설정
-// 개발 환경: http://localhost:60002/app
-// 프로덕션 환경: 배포 시 실제 서버 URL로 
-export const API_BASE_URL = 'http://localhost:60002/app';
+// 환경별 자동 전환
+const getApiBaseUrl = () => {
+  // 개발 환경 (npm run dev)
+  if (import.meta.env.DEV) {
+    return 'http://localhost:60002/app';
+  }
+  
+  // 프로덕션 환경 (npm run build)
+  // 여기에 학교 서버 주소를 입력하세요
+  return 'http://your-school-server.com:port/app';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // API 엔드포인트
 export const API_ENDPOINTS = {
   ADMIN_LOGIN: `${API_BASE_URL}/admin/login`,
+  
+  // 프로젝트 관리
+  PROJECTS_LIST: `${API_BASE_URL}/admin/projects`,
+  PROJECT_DELETE: (projectId) => `${API_BASE_URL}/admin/projects/${projectId}`,
+  
+  // 회원 관리
+  USERS_ALL: `${API_BASE_URL}/admin/users`,
+  USERS_REPORTED: `${API_BASE_URL}/admin/reports`,
+  USERS_BLOCKED: `${API_BASE_URL}/admin/blocked-users`,
+  USER_REPORT_DETAIL: (userId) => `${API_BASE_URL}/admin/users/${userId}/reports`,
+  USER_REPORT_STATUS: (reportId) => `${API_BASE_URL}/admin/reports/${reportId}/status`,
+  USER_BAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/ban`,
+  USER_UNBAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/unban`,
+  
   // 추후 다른 API 엔드포인트 추가
 };
 
