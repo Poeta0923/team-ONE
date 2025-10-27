@@ -1,4 +1,4 @@
-GET	/train/health	학습 서버 상태 및 버전 확인
+<!-- GET	/train/health	학습 서버 상태 및 버전 확인
 	/train/system/resources	CPU/메모리/디스크 사용량 조회
 	/train/datasets	등록된 데이터셋 목록 조회
 	/train/datasets/{datasetId}	특정 데이터셋 상세 정보 조회
@@ -27,9 +27,9 @@ PATCH	/train/models/{modelId}	모델 메타 정보 수정
 	/train/ai-model/parameters	학습/추론 AI 모델 파라미터 수정
 DELETE	/train/datasets/{datasetId}	특정 데이터셋 삭제
 	/train/models/{modelId}	특정 모델 삭제
-	/train/experiments/{experimentId}	특정 실험 삭제
+	/train/experiments/{experimentId}	특정 실험 삭제 -->
 
-
+<!-- 
 #traits_fastapi 
 - sudo mkdir -p /mnt/e/tools
 - sudo chmod 777 /mnt/e/tools
@@ -52,7 +52,7 @@ jq '( .data // [] )
       | ( to_entries
           | sort_by(.value) | reverse | .[:2]
           | map({label:.key, prob:.value}) ) ]' /tmp/sandbox_resp.json
-
+ -->
 
 <!-- // 배치 스코어, TOP-N 정렬
 curl -sS -X POST http://127.0.0.1:8093/score/batch \
@@ -75,3 +75,8 @@ curl -sS -X POST http://127.0.0.1:8093/score/batch \
 
 <!-- 후보생성 모델 정확도
 curl -s http://localhost:8091/train/evaluate_candidate_demo   -H "Content-Type: application/json"   -d '{"n_candidates":100,"n_queries":500,"k":4,"metric":"cosine","bins":30,"seed":42}' | jq . -->
+
+<!-- 수락확률 정확도
+curl -s http://localhost:8091/train/evaluate \
+  -H "Content-Type: application/json" \
+  --data-binary "@accept_train.json" | jq -->
