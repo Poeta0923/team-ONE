@@ -7,7 +7,7 @@ const express = require('express');
 // Express Router 인스턴스 생성
 const router = express.Router();
 // 프로젝트 전역 로거 로드 (Winston)
-const logger = require('../lib/logger');
+const logger = require('../lib/util/logger');
 
 // =================================================================
 // 2. Library Js Files Routing (외부 모듈/컨트롤러 로드)

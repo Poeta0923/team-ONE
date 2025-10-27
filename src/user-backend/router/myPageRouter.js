@@ -54,3 +54,6 @@ router.patch('/resume/edit', verifyToken, (req, res)=>{
     // editResume.editResume 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     editResume.editResume(req, res);
 })
+
+// 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
+module.exports = router;
