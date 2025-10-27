@@ -1,4 +1,4 @@
-/* HomePage.css */
+
 .home-page {
   min-height: 100vh;
   background-color: #ffffff;
@@ -7,7 +7,6 @@
   overflow-x: hidden;
 }
 
-/* 컨테이너 스타일 */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -15,16 +14,15 @@
   width: 100%;
 }
 
-/* 히어로 섹션 */
 .hero {
   background: linear-gradient(135deg, #ff6b35 0%, #8e44ad 50%, #ff6b35 100%);
   background-size: 400% 400%;
   animation: gradientShift 12s ease-in-out infinite;
   color: #ffffff;
-  padding: 140px 0 100px; /* 높이 증가 */
+  padding: 140px 0 100px; 
   text-align: center;
   position: relative;
-  min-height: 80vh; /* 높이 증가 */
+  min-height: 80vh; 
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -51,7 +49,6 @@
 }
 
 
-/* 애니메이션 스타일 */
 .animate-fade-in-up {
   animation: fadeInUp 0.8s ease-out forwards;
   opacity: 0;
@@ -69,7 +66,7 @@
   }
 }
 
-/* 새로운 Hero 애니메이션들 */
+
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
@@ -91,7 +88,7 @@
   }
 }
 
-/* 타이핑 애니메이션 - 부제목과 설명문만 */
+
 .hero-subtitle {
   animation: typewriter 1.5s steps(15, end) 0.5s forwards, blink 0.75s step-end infinite 0.5s, hideCursor 0.1s 2s forwards;
 }
@@ -168,7 +165,7 @@
   }
 }
 
-/* 초기 상태 설정 */
+
 .hero-title,
 .hero-subtitle,
 .hero-description,
@@ -178,7 +175,7 @@
   transition: all 0.8s ease-out;
 }
 
-/* 스크롤 애니메이션을 위한 초기 상태 */
+
 [data-animate] {
   opacity: 0;
   transform: translateY(30px);
@@ -189,10 +186,10 @@
   opacity: 1;
   transform: translateY(0);
   animation: fadeInUp 0.8s ease-out;
-  animation-delay: 0s !important; /* 모든 요소가 동시에 나타나도록 강제 설정 */
+  animation-delay: 0s !important; 
 }
 
-/* 애니메이션 적용 시 */
+
 .hero-title.animate-fade-in-up {
   animation: fadeInUp 0.8s ease-out 0.1s forwards;
 }
@@ -234,7 +231,7 @@
 
 .hero-description {
   font-size: 18px;
-  margin: 0 auto 20px auto; /* 40px에서 20px로 줄임 */
+  margin: 0 auto 20px auto; 
   color: #ffffff;
   line-height: 1.6;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
@@ -244,7 +241,7 @@
   width: 0;
   opacity: 1;
   text-align: center;
-  display: block; /* 블록 요소로 확실히 설정 */
+  display: block; 
 }
 
 .hero-buttons {
@@ -252,7 +249,7 @@
   gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-top: 60px; /* 40px에서 60px로 더 증가 */
+  margin-top: 60px; 
 }
 
 .btn {
@@ -298,10 +295,10 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* 섹션 공통 스타일 */
+
 .about-section,
 .team-section {
-  padding: 120px 0; /* 높이 증가 */
+  padding: 120px 0; 
   width: 100%;
   clear: both;
 }
@@ -322,12 +319,11 @@
   width: 100%;
 }
 
-/* 서비스 소개 섹션 */
 .about-section {
   background-color: #ffffff;
   position: relative;
   z-index: 1;
-  padding: 120px 0; /* 높이 증가 */
+  padding: 120px 0; 
 }
 
 .features-grid {
@@ -473,7 +469,7 @@
 
   .about-section,
   .team-section {
-    padding: 80px 0; /* 모바일에서도 높이 증가 */
+    padding: 80px 0; 
   }
 
   .section-title {

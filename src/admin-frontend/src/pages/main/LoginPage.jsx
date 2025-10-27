@@ -6,7 +6,7 @@ import './LoginPage.css';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    id: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -26,31 +26,21 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // adminLogin 함수 사용 (Mock API 지원)
-      const data = await adminLogin(formData.username, formData.password);
+      const data = await adminLogin(formData.id, formData.password);
 
-      // 응답 확인 (Mock 또는 실제 API)
-      if (data.success || data.resultCode === 200) {
-        // 토큰 저장
+      if (data.resultCode === 200) {
         if (data.data && data.data.accessToken && data.data.refreshToken) {
           setTokens(data.data.accessToken, data.data.refreshToken);
-          
-          // 로그인 성공 메시지 (옵션)
-          console.log(data.message || data.successMessage || '로그인 성공');
-          
-          // 관리자 페이지로 이동
+          console.log(data.successMessage);
           navigate('/admin');
         } else {
           setError('토큰 정보가 올바르지 않습니다.');
         }
       } else {
-        // 로그인 실패
-        setError(data.errorMessage || data.message || '로그인에 실패했습니다.');
+        setError(data.successMessage || '로그인에 실패했습니다.');
       }
     } catch (err) {
       console.error('로그인 에러:', err);
-      
-      // 에러 메시지 설정
       setError(err.message || '로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
@@ -73,12 +63,12 @@ const LoginPage = () => {
           {error && <div className="error-message">{error}</div>}
           
           <div className="form-group">
-            <label htmlFor="username">아이디</label>
+            <label htmlFor="id">아이디</label>
             <input
               type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              id="id"
+              name="id"
+              value={formData.id}
               onChange={handleChange}
               placeholder="아이디를 입력하세요"
               required
@@ -104,7 +94,7 @@ const LoginPage = () => {
         </form>
 
         <div className="login-footer">
-          <p>테스트 계정: admin / admin123</p>
+          <p>테스트 계정: admin / 1234</p>
           <a href="/" className="back-link">← 홈으로 돌아가기</a>
         </div>
       </div>

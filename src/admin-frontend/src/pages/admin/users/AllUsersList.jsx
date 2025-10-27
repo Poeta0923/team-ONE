@@ -19,13 +19,12 @@ const AllUsersList = () => {
     try {
       const result = await fetchAllUsers(page, 10);
       
-      if (result.success) {
-        setUsers(result.data);
-        setTotalElements(result.total);
-        // 페이지 계산 (총 개수 / 페이지당 개수)
-        setTotalPages(Math.ceil(result.total / 10));
+      if (result.resultCode === 200) {
+        setUsers(result.data.users);
+        setTotalElements(result.data.totalElements);
+        setTotalPages(result.data.totalPages);
       } else {
-        console.error('전체 회원 조회 실패');
+        console.error('전체 회원 조회 실패:', result.successMessage);
       }
     } catch (error) {
       console.error('전체 회원 조회 실패:', error);
@@ -61,8 +60,8 @@ const AllUsersList = () => {
           </tr>
         </thead>
         <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
+          {users.map((user, index) => (
+            <tr key={`${user.nickName}-${user.phoneNumber}-${index}`}>
               <td>{user.name}</td>
               <td>{user.nickName}</td>
               <td>{user.techStack}</td>

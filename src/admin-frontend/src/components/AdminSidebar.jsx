@@ -1,22 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoImage from '../assets/로고.png';
-import { clearTokens } from '../utils/api';
+import { adminLogout, clearTokens } from '../utils/api';
 import './AdminSidebar.css';
 
 const AdminSidebar = ({ activeMenu, onMenuChange }) => {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleMenuClick = (item) => {
     onMenuChange(item.id);
     navigate(item.path);
   };
 
-  const handleLogout = () => {
-    // 토큰 제거
-    clearTokens();
-    // 로그인 페이지로 이동
-    navigate('/login');
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    
+    try {
+      await adminLogout();
+      clearTokens();
+      navigate('/login');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      clearTokens();
+      navigate('/login');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const menuItems = [
@@ -51,9 +63,13 @@ const AdminSidebar = ({ activeMenu, onMenuChange }) => {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="logout-btn" onClick={handleLogout}>
+        <button 
+          className="logout-btn" 
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+        >
           <span className="logout-icon">🚪</span>
-          로그아웃
+          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
         </button>
       </div>
     </aside>

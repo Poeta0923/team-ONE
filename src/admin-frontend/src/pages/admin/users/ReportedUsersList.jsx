@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchReportedUsers } from '../../../utils/api';
+import { fetchReports } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const ReportedUsersList = () => {
@@ -19,17 +19,17 @@ const ReportedUsersList = () => {
     setLoading(true);
     
     try {
-      const result = await fetchReportedUsers(page, 10);
+      const result = await fetchReports(page, 10);
       
-      if (result.success) {
-        setReports(result.data);
-        setTotalElements(result.total);
-        setTotalPages(Math.ceil(result.total / 10));
+      if (result.resultCode === 200) {
+        setReports(result.data.reports);
+        setTotalElements(result.data.totalElements);
+        setTotalPages(result.data.totalPages);
       } else {
-        console.error('신고된 회원 조회 실패');
+        console.error('신고 내역 조회 실패:', result.successMessage);
       }
     } catch (error) {
-      console.error('신고된 회원 조회 실패:', error);
+      console.error('신고 내역 조회 실패:', error);
     } finally {
       setLoading(false);
     }

@@ -21,6 +21,7 @@ export const API_BASE_URL = getApiBaseUrl();
 // API 엔드포인트
 export const API_ENDPOINTS = {
   ADMIN_LOGIN: `${API_BASE_URL}/admin/login`,
+  ADMIN_LOGOUT: `${API_BASE_URL}/admin/logout`,
   
   // 프로젝트 관리
   PROJECTS_LIST: `${API_BASE_URL}/admin/projects`,
@@ -28,14 +29,12 @@ export const API_ENDPOINTS = {
   
   // 회원 관리
   USERS_ALL: `${API_BASE_URL}/admin/users`,
-  USERS_REPORTED: `${API_BASE_URL}/admin/reports`,
-  USERS_BLOCKED: `${API_BASE_URL}/admin/blocked-users`,
+  REPORTS: `${API_BASE_URL}/admin/reports`,
+  USERS_BANNED: `${API_BASE_URL}/admin/banned-users`,
   USER_REPORT_DETAIL: (userId) => `${API_BASE_URL}/admin/users/${userId}/reports`,
   USER_REPORT_STATUS: (reportId) => `${API_BASE_URL}/admin/reports/${reportId}/status`,
   USER_BAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/ban`,
   USER_UNBAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/unban`,
-  
-  // 추후 다른 API 엔드포인트 추가
 };
 
 // 로컬 스토리지에서 토큰 가져오기
@@ -79,155 +78,241 @@ export const isAuthenticated = () => {
 const mockData = {
   // 로그인 응답
   login: {
-    success: true,
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "로그인 성공",
     data: {
-      accessToken: 'mock_access_token_12345',
-      refreshToken: 'mock_refresh_token_67890',
-      user: {
-        id: 1,
-        username: 'admin',
-        role: 'admin'
-      }
-    },
-    message: '로그인 성공'
+      accessToken: "mock_access_token_12345",
+      refreshToken: "mock_refresh_token_67890"
+    }
+  },
+
+  // 로그아웃 응답
+  logout: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "로그아웃 성공",
+    data: null
   },
 
   // 전체 회원 목록
   users: {
-    success: true,
-    data: [
-      { 
-        id: 1, 
-        username: 'user1', 
-        name: '김철수',
-        nickName: '코딩왕',
-        email: 'user1@example.com', 
-        techStack: 'React, Node.js',
-        phoneNumber: '010-1234-5678',
-        birth: '1995-03-15',
-        address: '서울 강남구',
-        createdAt: '2024-01-15', 
-        status: 'active', 
-        reportCount: 0 
-      },
-      { 
-        id: 2, 
-        username: 'user2', 
-        name: '이영희',
-        nickName: '디자이너',
-        email: 'user2@example.com', 
-        techStack: 'Vue, Spring',
-        phoneNumber: '010-2345-6789',
-        birth: '1998-07-21',
-        address: '경기 성남시',
-        createdAt: '2024-02-20', 
-        status: 'active', 
-        reportCount: 2 
-      },
-      { 
-        id: 3, 
-        username: 'user3', 
-        name: '박민수',
-        nickName: '백엔드마스터',
-        email: 'user3@example.com', 
-        techStack: 'Java, Python',
-        phoneNumber: '010-3456-7890',
-        birth: '1997-11-08',
-        address: '인천 남동구',
-        createdAt: '2024-03-10', 
-        status: 'active', 
-        reportCount: 1 
-      },
-      { 
-        id: 4, 
-        username: 'user4', 
-        name: '정수진',
-        nickName: 'AI전문가',
-        email: 'user4@example.com', 
-        techStack: 'Python, TensorFlow',
-        phoneNumber: '010-4567-8901',
-        birth: '1996-05-25',
-        address: '서울 마포구',
-        createdAt: '2024-04-05', 
-        status: 'active', 
-        reportCount: 0 
-      },
-      { 
-        id: 5, 
-        username: 'user5', 
-        name: '최동욱',
-        nickName: '풀스택개발자',
-        email: 'user5@example.com', 
-        techStack: 'React, Spring, AWS',
-        phoneNumber: '010-5678-9012',
-        birth: '1999-09-30',
-        address: '경기 고양시',
-        createdAt: '2024-05-12', 
-        status: 'active', 
-        reportCount: 5 
-      },
-    ],
-    total: 5
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "회원 목록 조회 성공",
+    data: {
+      users: [
+        {
+          name: "김유저",
+          nickName: "유저일",
+          techStack: "Java, Spring Boot",
+          phoneNumber: "010-1111-0001",
+          birth: "1995-03-15",
+          address: "서울특별시 강남구"
+        },
+        {
+          name: "이유저",
+          nickName: "유저이",
+          techStack: "React, TypeScript",
+          phoneNumber: "010-1111-0002",
+          birth: "1998-11-02",
+          address: "경기도 성남시"
+        },
+        {
+          name: "박유저",
+          nickName: "유저삼",
+          techStack: "Python, TensorFlow",
+          phoneNumber: "010-1111-0003",
+          birth: "1997-07-21",
+          address: "부산광역시 해운대구"
+        },
+        {
+          name: "최유저",
+          nickName: "유저사",
+          techStack: "Figma, Adobe XD",
+          phoneNumber: "010-1111-0004",
+          birth: "1993-01-30",
+          address: "인천광역시 연수구"
+        },
+        {
+          name: "정유저",
+          nickName: "유저오",
+          techStack: "HTML/CSS, JS",
+          phoneNumber: "010-1111-0005",
+          birth: "2002-05-05",
+          address: "대전광역시 유성구"
+        },
+        {
+          name: "한유저",
+          nickName: "유저육",
+          techStack: "React Native, Firebase",
+          phoneNumber: "010-1111-0006",
+          birth: "1999-02-10",
+          address: "서울특별시 마포구"
+        },
+        {
+          name: "송유저",
+          nickName: "유저칠",
+          techStack: "Vue.js, Nuxt.js",
+          phoneNumber: "010-1111-0007",
+          birth: "1994-04-23",
+          address: "경기도 수원시"
+        },
+        {
+          name: "김유저",
+          nickName: "유저팔",
+          techStack: "Python, Django",
+          phoneNumber: "010-1111-0008",
+          birth: "1990-04-24",
+          address: "서울특별시 용산구"
+        },
+        {
+          name: "남유저",
+          nickName: "유저구",
+          techStack: "Swift, SwiftUI",
+          phoneNumber: "010-1111-0009",
+          birth: "1994-02-22",
+          address: "부산광역시 수영구"
+        },
+        {
+          name: "배유저",
+          nickName: "유저십",
+          techStack: "Java, Kotlin, Spring",
+          phoneNumber: "010-1111-0010",
+          birth: "1994-10-10",
+          address: "광주광역시 동구"
+        }
+      ],
+      totalPages: 2,
+      totalElements: 11
+    }
   },
 
-  // 신고된 회원 목록
-  reportedUsers: {
-    success: true,
-    data: [
-      { 
-        reportId: 1, 
-        reporterName: '김민지', 
-        reportedName: '이영희', 
-        reason: '시간 약속을 안 지킴', 
-        createdAt: '2024-10-20T14:30:00Z', 
-        status: 'pending' 
-      },
-      { 
-        reportId: 2, 
-        reporterName: '박지훈', 
-        reportedName: '박민수', 
-        reason: '프로젝트 진행에 비협조적', 
-        createdAt: '2024-10-18T09:15:00Z', 
-        status: 'pending' 
-      },
-      { 
-        reportId: 3, 
-        reporterName: '이수현', 
-        reportedName: '최동욱', 
-        reason: '부적절한 언어 사용', 
-        createdAt: '2024-10-25T16:45:00Z', 
-        status: 'resolved' 
-      },
-    ],
-    total: 3
+  // 신고 내역 목록
+  reports: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "신고 내역 조회 성공",
+    data: {
+      reports: [
+        {
+          reportId: 1,
+          reporterName: "김유저",
+          reportedName: "이유저",
+          reason: "프로젝트 잠수 (연락 두절)",
+          createdAt: "2025-10-01T10:30:00",
+          status: "pending"
+        },
+        {
+          reportId: 2,
+          reporterName: "박유저",
+          reportedName: "최유저",
+          reason: "팀 채팅방에서 지속적인 비매너 행위 및 욕설",
+          createdAt: "2025-10-02T11:00:00",
+          status: "pending"
+        },
+        {
+          reportId: 3,
+          reporterName: "정유저",
+          reportedName: "한유저",
+          reason: "프로젝트와 관련 없는 홍보성 스팸 링크 게시",
+          createdAt: "2025-10-02T15:10:00",
+          status: "pending"
+        },
+        {
+          reportId: 4,
+          reporterName: "김유저",
+          reportedName: "최유저",
+          reason: "두 번째 신고: 욕설 및 비방 행위가 개선되지 않음",
+          createdAt: "2025-10-03T09:20:00",
+          status: "pending"
+        },
+        {
+          reportId: 5,
+          reporterName: "송유저",
+          reportedName: "김유저",
+          reason: "프로젝트 참여 없음 (무임승차)",
+          createdAt: "2025-09-15T14:00:00",
+          status: "pending"
+        },
+        {
+          reportId: 6,
+          reporterName: "남유저",
+          reportedName: "배유저",
+          reason: "과제 기한 미준수 및 팀원 비협조",
+          createdAt: "2025-09-20T18:00:00",
+          status: "pending"
+        },
+        {
+          reportId: 7,
+          reporterName: "박유저",
+          reportedName: "김유저",
+          reason: "사전 통보 없이 팀원을 강퇴 처리함",
+          createdAt: "2025-10-04T12:45:00",
+          status: "pending"
+        },
+        {
+          reportId: 8,
+          reporterName: "이유저",
+          reportedName: "박유저",
+          reason: "아이디어 도용 의심 (기획안 무단 사용)",
+          createdAt: "2025-10-05T10:00:00",
+          status: "pending"
+        },
+        {
+          reportId: 9,
+          reporterName: "최유저",
+          reportedName: "정유저",
+          reason: "팀 미팅에 지속적으로 불참 (3회 이상)",
+          createdAt: "2025-09-25T17:30:00",
+          status: "pending"
+        },
+        {
+          reportId: 10,
+          reporterName: "한유저",
+          reportedName: "송유저",
+          reason: "프로젝트 잠수",
+          createdAt: "2025-10-06T08:00:00",
+          status: "pending"
+        }
+      ],
+      totalPages: 2,
+      totalElements: 12
+    }
   },
 
   // 차단된 회원 목록
-  blockedUsers: {
-    success: true,
-    data: [
-      { 
-        userId: 10, 
-        name: '강태양', 
-        nickName: '스팸왕', 
-        username: 'blockedUser1', 
-        email: 'blocked1@example.com', 
-        status: 'banned',
-        reason: '부적절한 콘텐츠 게시 및 반복적인 스팸 활동', 
-        updatedAt: '2024-09-01T10:20:00Z' 
-      },
-      { 
-        userId: 11, 
-        name: '윤하늘', 
-        nickName: '트롤러', 
-        username: 'blockedUser2', 
-        email: 'blocked2@example.com', 
-        status: 'banned',
-        reason: '다른 사용자 괴롭힘 및 악의적인 행동', 
-        updatedAt: '2024-09-15T15:30:00Z' 
-      },
-    ],
-    total: 2
+  bannedUsers: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "차단된 회원 목록 조회 성공",
+    data: {
+      users: [
+        {
+          name: "이유저",
+          nickName: "유저이",
+          status: "banned",
+          reason: "프로젝트 잠수 신고 접수",
+          updatedAt: "2025-10-03T11:00:00"
+        },
+        {
+          name: "최유저",
+          nickName: "유저사",
+          status: "banned",
+          reason: "반복적인 비매너 행위 및 욕설 신고 접수",
+          updatedAt: "2025-10-04T10:00:00"
+        },
+        {
+          name: "한유저",
+          nickName: "유저육",
+          status: "banned",
+          reason: "홍보성 스팸 링크 게시로 인한 영구 차단",
+          updatedAt: "2025-10-03T16:00:00"
+        }
+      ],
+      totalPages: 1,
+      totalElements: 3
+    }
   },
 
   // 신고 상세 정보 (userId별로 다른 데이터)
@@ -495,21 +580,39 @@ const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 // ============================================
 
 // 로그인
-export const adminLogin = async (username, password) => {
+export const adminLogin = async (id, password) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    // Mock에서는 어떤 아이디/비밀번호든 성공
-    if (username === 'admin' && password === 'admin123') {
+    if (id === 'admin' && password === '1234') {
       return mockData.login;
     } else {
-      throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+      return {
+        contentType: "json",
+        resultCode: 401,
+        successMessage: "아이디 또는 비밀번호가 일치하지 않습니다.",
+        data: null
+      };
     }
   }
   
   const response = await fetch(API_ENDPOINTS.ADMIN_LOGIN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ id, password })
+  });
+  return response.json();
+};
+
+// 로그아웃
+export const adminLogout = async () => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.logout;
+  }
+  
+  const response = await fetch(API_ENDPOINTS.ADMIN_LOGOUT, {
+    method: 'POST',
+    headers: getAuthHeaders()
   });
   return response.json();
 };
@@ -527,27 +630,27 @@ export const fetchAllUsers = async (page = 1, limit = 10) => {
   return response.json();
 };
 
-// 신고된 회원 목록 조회
-export const fetchReportedUsers = async (page = 1, limit = 10) => {
+// 신고 내역 조회
+export const fetchReports = async (page = 1, limit = 10) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return mockData.reportedUsers;
+    return mockData.reports;
   }
   
-  const response = await fetch(`${API_ENDPOINTS.USERS_REPORTED}?page=${page}&limit=${limit}`, {
+  const response = await fetch(`${API_ENDPOINTS.REPORTS}?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders()
   });
   return response.json();
 };
 
 // 차단된 회원 목록 조회
-export const fetchBlockedUsers = async (page = 1, limit = 10) => {
+export const fetchBannedUsers = async (page = 1, limit = 10) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return mockData.blockedUsers;
+    return mockData.bannedUsers;
   }
   
-  const response = await fetch(`${API_ENDPOINTS.USERS_BLOCKED}?page=${page}&limit=${limit}`, {
+  const response = await fetch(`${API_ENDPOINTS.USERS_BANNED}?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders()
   });
   return response.json();

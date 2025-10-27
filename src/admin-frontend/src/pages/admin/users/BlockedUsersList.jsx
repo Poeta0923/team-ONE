@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchBlockedUsers } from '../../../utils/api';
+import { fetchBannedUsers } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const BlockedUsersList = () => {
@@ -19,14 +19,14 @@ const BlockedUsersList = () => {
     setLoading(true);
     
     try {
-      const result = await fetchBlockedUsers(page, 10);
+      const result = await fetchBannedUsers(page, 10);
       
-      if (result.success) {
-        setUsers(result.data);
-        setTotalElements(result.total);
-        setTotalPages(Math.ceil(result.total / 10));
+      if (result.resultCode === 200) {
+        setUsers(result.data.users);
+        setTotalElements(result.data.totalElements);
+        setTotalPages(result.data.totalPages);
       } else {
-        console.error('차단된 회원 조회 실패');
+        console.error('차단된 회원 조회 실패:', result.successMessage);
       }
     } catch (error) {
       console.error('차단된 회원 조회 실패:', error);
@@ -76,8 +76,8 @@ const BlockedUsersList = () => {
           </tr>
         </thead>
         <tbody>
-          {users.map(user => (
-            <tr key={user.userId}>
+          {users.map((user, index) => (
+            <tr key={`${user.nickName}-${user.name}-${index}`}>
               <td>{user.name}</td>
               <td>{user.nickName}</td>
               <td>{formatDateTime(user.updatedAt)}</td>
@@ -85,7 +85,7 @@ const BlockedUsersList = () => {
               <td>
                 <button
                   className="more-button"
-                  onClick={() => handleMoreClick(user.userId)}
+                  onClick={() => handleMoreClick(user.nickName)}
                 >
                   더보기
                 </button>
