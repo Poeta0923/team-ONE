@@ -10,7 +10,7 @@ const express = require('express');
 // HTTP 요청 본문 파싱 미들웨어 로드 (HTML 폼 데이터 처리)
 const bodyParser = require('body-parser'); 
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('./lib/logger'); 
+const logger = require('./lib/util/logger'); 
 // Express 애플리케이션 인스턴스 생성
 const app = express();
 
