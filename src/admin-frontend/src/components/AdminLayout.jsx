@@ -7,7 +7,6 @@ const AdminLayout = ({ children }) => {
   const location = useLocation();
   const [currentMenu, setCurrentMenu] = useState('dashboard');
 
-  // 현재 경로에 따라 activeMenu 설정
   useEffect(() => {
     const path = location.pathname;
     if (path === '/admin' || path === '/admin/') {
@@ -21,7 +20,6 @@ const AdminLayout = ({ children }) => {
     } else if (path.startsWith('/admin/ai')) {
       setCurrentMenu('ai');
     } else {
-      // 기본값은 대시보드
       setCurrentMenu('dashboard');
     }
   }, [location.pathname]);
@@ -36,13 +34,11 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="admin-layout">
-      {/* 사이드바 */}
       <AdminSidebar 
         activeMenu={currentMenu} 
         onMenuChange={setCurrentMenu} 
       />
 
-      {/* 메인 콘텐츠 */}
       <main className="main-content">
         <header className="content-header">
           <h1>{menuItems.find(item => item.id === currentMenu)?.label}</h1>

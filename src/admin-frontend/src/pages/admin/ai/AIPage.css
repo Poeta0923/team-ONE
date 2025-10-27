@@ -1,4 +1,3 @@
-/* AIPage.css */
 .ai-content {
   padding: 20px;
 }
@@ -172,7 +171,6 @@
   background-color: #e55a2b;
 }
 
-/* 반응형 디자인 */
 @media (max-width: 768px) {
   .ai-stats {
     grid-template-columns: 1fr;

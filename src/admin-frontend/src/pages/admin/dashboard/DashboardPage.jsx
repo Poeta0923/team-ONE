@@ -3,7 +3,7 @@ import AdminLayout from '../../../components/AdminLayout';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
-  // TODO: API 연동 시 삭제될 임시 데이터
+  //API 연동 시 삭제될 임시 데이터
   const tempData = {
     monthlyUsers: {
       current: 1234,
@@ -47,14 +47,12 @@ const DashboardPage = () => {
 
   const renderDashboard = () => (
     <div className="dashboard-content">
-      {/* 1. 월간 이용자 증감 (그래프) */}
       <div className="dashboard-section">
         <div className="section-header">
           <h3>월간 이용자 증감</h3>
         </div>
         <div className="chart-container">
           <div className="chart-placeholder">
-            {/* TODO: API 연동 시 Chart.js 또는 Recharts로 교체 */}
             <p>월간 이용자 증감 차트 (Chart.js/Recharts 사용 예정)</p>
             <div className="temp-chart">
               <div className="chart-bar" style={{height: '60%'}}></div>
@@ -67,14 +65,12 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* 2. 최근 생성된 프로젝트 */}
       <div className="dashboard-section">
         <div className="section-header">
           <h3>최근 생성된 프로젝트</h3>
           <a href="/admin/projects" className="view-all-link">전체보기</a>
         </div>
         <div className="list-container">
-          {/* TODO: API 연동 시 tempData.recentProjects를 실제 API 데이터로 교체 */}
           {tempData.recentProjects.slice(0, 4).map(project => (
             <div key={project.id} className="list-item">
               <div className="item-info">
@@ -89,14 +85,12 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* 3. 최근 가입한 회원 */}
       <div className="dashboard-section">
         <div className="section-header">
           <h3>최근 가입한 회원</h3>
           <a href="/admin/users" className="view-all-link">전체보기</a>
         </div>
         <div className="user-cards-container">
-          {/* TODO: API 연동 시 tempData.recentUsers를 실제 API 데이터로 교체 */}
           {tempData.recentUsers.slice(0, 4).map(user => (
             <div key={user.id} className="user-card">
               <div className="user-avatar">
@@ -111,14 +105,12 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* 4. 연간 이용자 증감 (그래프) */}
       <div className="dashboard-section">
         <div className="section-header">
           <h3>연간 이용자 증감</h3>
         </div>
         <div className="chart-container">
           <div className="chart-placeholder">
-            {/* TODO: API 연동 시 Chart.js 또는 Recharts로 교체 */}
             <p>연간 이용자 증감 차트 (Chart.js/Recharts 사용 예정)</p>
             <div className="temp-chart">
               {tempData.yearlyUsers.data.map((item, index) => (

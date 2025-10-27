@@ -122,7 +122,6 @@ const ReportDetailPage = () => {
           </div>
         </div>
 
-        {/* 회원 기본 정보 */}
         <div className="user-info-section">
           <h3>회원 정보</h3>
           <div className="info-grid">

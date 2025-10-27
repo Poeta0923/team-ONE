@@ -1,11 +1,9 @@
-/* AdminLayout.css */
 .admin-layout {
   display: flex;
   min-height: 100vh;
   background-color: #f8f9fa;
 }
 
-/* 메인 콘텐츠 */
 .main-content {
   flex: 1;
   margin-left: 280px;
@@ -39,7 +37,6 @@
   padding: 30px;
 }
 
-/* 반응형 디자인 */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;

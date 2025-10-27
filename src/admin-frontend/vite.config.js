@@ -7,9 +7,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // API 요청을 학교 서버로 프록시
       '/app': {
-        target: 'http://ceprj.gachon.ac.kr:60002', // 학교 서버 주소로 변경
+        target: 'http://ceprj.gachon.ac.kr:60002', 
         changeOrigin: true,
         secure: false,
       }

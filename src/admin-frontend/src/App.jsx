@@ -15,11 +15,9 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        {/* 메인 페이지 */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         
-        {/* 관리자 페이지 - 인증 필요 */}
         <Route path="/admin" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
         <Route path="/admin/users/report-detail/:userId" element={<ProtectedRoute><ReportDetailPage /></ProtectedRoute>} />

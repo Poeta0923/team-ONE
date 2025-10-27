@@ -7,7 +7,6 @@ const HomePage = () => {
   const [visibleElements, setVisibleElements] = useState(new Set());
 
   useEffect(() => {
-    // 컴포넌트가 마운트된 후 애니메이션 시작
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 100);
@@ -15,16 +14,13 @@ const HomePage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Intersection Observer를 사용한 스크롤 애니메이션
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // 요소가 화면에 들어올 때 애니메이션 추가
             setVisibleElements(prev => new Set([...prev, entry.target.id]));
           } else {
-            // 요소가 화면에서 벗어날 때 애니메이션 제거 (재실행을 위해)
             setVisibleElements(prev => {
               const newSet = new Set(prev);
               newSet.delete(entry.target.id);
@@ -39,7 +35,7 @@ const HomePage = () => {
       }
     );
 
-    // 애니메이션을 적용할 요소들 관찰
+
     const elementsToObserve = document.querySelectorAll('[data-animate]');
     elementsToObserve.forEach(el => observer.observe(el));
 
@@ -49,10 +45,8 @@ const HomePage = () => {
   }, []);
   return (
     <div className="home-page">
-      {/* 헤더 */}
       <Navbar type="main" />
 
-      {/* 메인 히어로 섹션 */}
       <section className="hero">
         
         <div className="container">

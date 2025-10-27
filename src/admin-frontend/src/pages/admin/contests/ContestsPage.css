@@ -1,4 +1,3 @@
-/* ContestsPage.css */
 .contests-content {
   padding: 20px;
 }
@@ -125,7 +124,6 @@
   background-color: #e55a2b;
 }
 
-/* 반응형 디자인 */
 @media (max-width: 768px) {
   .contests-grid {
     grid-template-columns: 1fr;
