@@ -40,7 +40,7 @@ const verifyToken = (req, res, next) => {
         // 다음 라우트 핸들러에서 req.user.id를 통해 로그인 사용자 정보를 사용할 수 있습니다.
         req.user = decoded; 
         
-        logger.debug(`[Auth Success] 토큰 유효함. 사용자 ID: ${req.user.id}`);
+        logger.debug(`[Auth Success] 토큰 유효함. 사용자 ID: ${req.user.userId}`);
         // 5. 다음 미들웨어 또는 라우트 핸들러로 제어권 넘기기
         next();
     });
