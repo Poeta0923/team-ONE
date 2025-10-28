@@ -11,7 +11,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.teammatching.admin.global.jwt.JwtAuthenticationFilter; // 임포트 추가
 import lombok.RequiredArgsConstructor; // 임포트 추가
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
+//CORS 관련 improt 추가
+import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -35,6 +36,9 @@ public class SecurityConfig {
 
                 // 2-2. 세션을 사용하지 않고, JWT(토큰) 방식을 사용하도록 설정
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                //  WebConfig.java의 CORS 설정을 사용하겠다는 의미
+                .cors(withDefaults())
 
                 // 2-3. URL 별 접근 권한 설정
                 .authorizeHttpRequests(authz -> authz
