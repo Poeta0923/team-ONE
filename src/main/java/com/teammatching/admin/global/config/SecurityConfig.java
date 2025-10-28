@@ -42,6 +42,8 @@ public class SecurityConfig {
 
                 // 2-3. URL 별 접근 권한 설정
                 .authorizeHttpRequests(authz -> authz
+                        //preflight OPTIONS 요청 허용
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         // Swagger 관련 주소는 모두 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // '/admin/login' API는 누구나 접근할 수 있도록 허용

@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://ceprj.gachon.ac.kr:60002" // 학과 서버 주소
                 )
 
-                .allowedMethods("GET", "POST", "PUT", "DELETE") // 3. 허용할 HTTP 메소드
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 3. 허용할 HTTP 메소드
                 .allowedHeaders("*") // 4. 모든 헤더 허용 (Authorization 헤더 포함)
                 .allowCredentials(true) // 5. 쿠키/인증 헤더(토큰) 허용
                 .maxAge(3600); // 6. pre-flight 요청 캐시 시간
