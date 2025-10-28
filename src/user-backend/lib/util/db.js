@@ -1,40 +1,36 @@
 // =================================================================
-// DB Connection Module (MySQL)
+// DB Connection Module (MySQL) - 수정된 내용 (Pool 사용)
 // =================================================================
 
-// MySQL 데이터베이스 드라이버 로드
 const mysql = require('mysql');
 
-// [1] DB 연결 설정 정의
-// NOTE: 보안 강화를 위해 모든 민감 정보는 process.env 환경 변수에서 가져옵니다.
+// [1] DB 연결 설정 정의 (동일)
 const dbConfig = {
-    // 호스트 주소 (process.env.DB_HOST)
     host : process.env.DB_HOST || 'localhost', 
-    // 포트 번호
     port: process.env.DB_PORT || 3306,
-    // 데이터베이스 사용자 이름 (process.env.DB_USER)
     user : process.env.DB_USER || 'team-ONE',
-    // 사용자 비밀번호 (process.env.DB_PASSWORD)
     password : process.env.DB_PASSWORD || 'team-ONE123',
-    // 연결할 데이터베이스 이름
     database : process.env.DB_DATABASE || 'team-ONE',
-    // 한 번의 쿼리에서 여러 개의 SQL 문을 사용할 수 있도록 허용
-    multipleStatements : true 
+    multipleStatements : true,
+    // Pool 설정 추가 (선택적)
+    connectionLimit: 10 // 최대 연결 개수 설정
 };
 
-// [2] MySQL Connection 객체 생성
-const db = mysql.createConnection(dbConfig);
+// [2] MySQL Connection Pool 객체 생성
+// NOTE: Connection Pool을 사용해야 getConnection() 메서드를 사용할 수 있고, 
+//       동시 요청에 안전하며 연결 관리가 용이합니다.
+const db = mysql.createPool(dbConfig);
 
-// [3] DB 연결 실행
-// 애플리케이션 시작 시 연결을 수립합니다.
-db.connect(err => {
+// [3] DB 연결 테스트 (Pool.getConnection 사용)
+db.getConnection((err, connection) => {
     if (err) {
-        console.error('MySQL 연결 실패:', err.stack);
-        return; 
+        // Pool.getConnection 에러는 심각한 오류 (설정 오류 등)를 의미합니다.
+        console.error('MySQL Pool 초기 연결 테스트 실패:', err.stack);
+        return;
     }
-    console.log('MySQL 연결 성공. ID:', db.threadId);
+    console.log('MySQL Connection Pool 생성 및 연결 성공.');
+    connection.release(); // 연결을 Pool에 반환
 });
 
-// [4] 모듈 외부로 연결 객체 내보내기
-// 다른 파일(라우터, 서비스)에서 데이터베이스 접근 시 이 객체를 사용합니다.
+// [4] 모듈 외부로 Pool 객체 내보내기
 module.exports = db;
