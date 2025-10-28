@@ -27,7 +27,7 @@ public class AuthService {
             throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        // 3. 관리자(ADMIN) 권한이 있는지 확인한다.
+        // 3. 관리자(ADMIN) 권한이 있는지 확인
         if (admin.getRole() != Role.ADMIN) {
             throw new IllegalArgumentException("관리자 권한이 없습니다.");
         }
