@@ -45,7 +45,7 @@ module.exports = {
 
         try {
             const userIdFromToken = req.user.userId;
-            const projectId = req.params.projectId; // 명확하게 변수화
+            const projectId = req.params.projectId;
 
             logger.info(`[Delete Project] 사용자 ID: ${userIdFromToken}의 프로젝트 ID: ${projectId} 삭제 시작`);
 
@@ -63,7 +63,7 @@ module.exports = {
             await util.promisify(connection.beginTransaction).call(connection);
 
             // ===================================================
-            // [3] DB 작업 실행
+            // [3] DB 작업 실행 (순서 수정됨: 자식 -> 부모)
             // ===================================================
 
             // [3-1] 프로젝트 소유자(팀장) 권한 확인
@@ -74,14 +74,14 @@ module.exports = {
                 throw new Error('AUTH_FAILED: 프로젝트를 삭제할 권한이 없습니다. (팀장만 가능)');
             }
 
-            // [3-2] 프로젝트 삭제 (projects 테이블)
-            await connectionQueryPromise(connection, sqlDeleteProject, projectValue);
+            // 💡 [3-2] 해당 프로젝트 좋아요 삭제 (like 테이블) - 자식 테이블 먼저 삭제
+            await connectionQueryPromise(connection, sqlDeleteLikes, projectValue);
             
-            // [3-3] 해당 프로젝트 참여 인원 삭제 (members 테이블)
+            // 💡 [3-3] 해당 프로젝트 참여 인원 삭제 (members 테이블) - 자식 테이블 먼저 삭제
             await connectionQueryPromise(connection, sqlDeleteMembers, projectValue);
             
-            // [3-4] 해당 프로젝트 좋아요 삭제 (like 테이블)
-            await connectionQueryPromise(connection, sqlDeleteLikes, projectValue);
+            // 💡 [3-4] 프로젝트 삭제 (projects 테이블) - 부모 테이블은 가장 마지막에 삭제
+            await connectionQueryPromise(connection, sqlDeleteProject, projectValue);
 
             // 모든 작업 성공 시 트랜잭션 커밋
             await util.promisify(connection.commit).call(connection);
