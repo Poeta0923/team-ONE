@@ -12,7 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
 
                 // 2. 프론트엔드 주소
                 .allowedOrigins(
-                        "http://localhost:3000",  // React 개발 서버 주소
+                        "http://localhost:5173",  // React 개발 서버 주소
                         "http://ceprj.gachon.ac.kr:60002" // 학과 서버 주소
                 )
 
