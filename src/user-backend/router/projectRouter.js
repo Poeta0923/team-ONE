@@ -33,6 +33,9 @@ const deleteProject = require('../lib/project/delete');
 // [6] 프로젝트 완료 처리 모듈 호출
 const complete = require('../lib/project/complete');
 
+// [7] 프로젝트 검색 모듈 호출
+const search = require('../lib/project/search');
+
 // =================================================================
 // 3. API Route Endpoints Definition
 // =================================================================
@@ -86,6 +89,15 @@ router.patch('/complete/:projectId', verifyToken, (req, res)=>{
 
     // complete.complete 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     complete.complete(req, res);
+})
+
+// [7] [GET] api/project/search 경로 정의
+router.search('/search', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`GET /api/project/search - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    // complete.complete 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
+    search.search(req, res);
 })
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
