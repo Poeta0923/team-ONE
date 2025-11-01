@@ -91,8 +91,8 @@ router.patch('/complete/:projectId', verifyToken, (req, res)=>{
     complete.complete(req, res);
 })
 
-// [7] [GET] api/project/search 경로 정의
-router.search('/search', verifyToken, (req, res)=>{
+// [7] [POST] api/project/search 경로 정의
+router.post('/search', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`GET /api/project/search - User: ${req.user ? req.user.userId : 'N/A'}`);
 
