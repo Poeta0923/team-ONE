@@ -2,6 +2,7 @@ package com.teammatching.admin.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.teammatching.admin.global.jwt.JwtAuthenticationFilter; // 임포트 추가
 import lombok.RequiredArgsConstructor; // 임포트 추가
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 //CORS 관련 improt 추가
 import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
@@ -40,10 +42,11 @@ public class SecurityConfig {
                 //  WebConfig.java의 CORS 설정을 사용하겠다는 의미
                 .cors(withDefaults())
 
+
                 // 2-3. URL 별 접근 권한 설정
                 .authorizeHttpRequests(authz -> authz
-                        //preflight OPTIONS 요청 허용
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Swagger 관련 주소는 모두 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // '/admin/login' API는 누구나 접근할 수 있도록 허용
