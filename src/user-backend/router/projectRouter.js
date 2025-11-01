@@ -58,7 +58,7 @@ router.post('/create', verifyToken, (req, res)=>{
 // [3] [PATCH] api/project/edit/:projectId 경로 정의
 router.patch('/edit/:projectId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`GET /api/project/edit/:projectId - User: ${req.user ? req.user.userId : N/A}`);
+    logger.info(`GET /api/project/edit/:projectId - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     // edit.edit 함수가 실행될 때 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     edit.edit(req, res);
@@ -67,7 +67,7 @@ router.patch('/edit/:projectId', verifyToken, (req, res)=>{
 // [4] [GET] api/project/detail/:projectId 경로 정의
 router.get('/detail/:projectId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`GET /api/project/detail/:projectId - User: ${req.user ? req.user.userId : N/A}`);
+    logger.info(`GET /api/project/detail/:projectId - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     // detail.detail 함수가 실행될 때 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     detail.detail(req, res);

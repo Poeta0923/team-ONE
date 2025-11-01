@@ -34,15 +34,15 @@ const sqlAllRecent = `
         EXISTS (
            SELECT 1 
             FROM \`like\`
-           WHERE projectId = p.projectId AND userId = ? -- 1: userIdFromToken
+           WHERE projectId = p.projectId AND userId = ?
         ) AS isLiked 
     FROM projects p
     LEFT JOIN \`like\` l ON p.projectId = l.projectId
     LEFT JOIN members m ON p.projectId = m.projectId AND m.state = '참여'
     WHERE 
-        p.type = ?                                           -- 2: 프로젝트 유형 필터링
-        AND p.category LIKE CONCAT('%', ?, '%')   -- 3: 프로젝트 분야 포함 검색
-        AND (                                     -- 4: 통합 검색어 조건 시작
+        p.type = ?
+        AND p.category LIKE CONCAT('%', ?, '%')
+        AND (
             p.name LIKE CONCAT('%', ?, '%') OR
             p.type LIKE CONCAT('%', ?, '%') OR
             p.category LIKE CONCAT('%', ?, '%') OR
@@ -63,15 +63,15 @@ const sqlAllPopular = `
         EXISTS (
             SELECT 1 
             FROM \`like\` 
-            WHERE projectId = p.projectId AND userId = ? -- 1: userIdFromToken
+            WHERE projectId = p.projectId AND userId = ? 
         ) AS isLiked 
     FROM projects p
     LEFT JOIN \`like\` l ON p.projectId = l.projectId
     LEFT JOIN members m ON p.projectId = m.projectId AND m.state = '참여'
     WHERE 
-        p.type = ?                               -- 2: 프로젝트 유형 필터링
-        AND p.category LIKE CONCAT('%', ?, '%')  -- 3: 프로젝트 분야 포함 검색
-        AND (                                    -- 4: 통합 검색어 조건 시작
+        p.type = ?
+        AND p.category LIKE CONCAT('%', ?, '%')
+        AND (
             p.name LIKE CONCAT('%', ?, '%') OR
             p.type LIKE CONCAT('%', ?, '%') OR
             p.category LIKE CONCAT('%', ?, '%') OR
@@ -94,12 +94,12 @@ const sqlUserLikes = `
         TRUE AS isLiked 
     FROM projects p
     -- 좋아요 테이블을 INNER JOIN하여 현재 사용자가 좋아요를 누른 프로젝트만 필터링
-    INNER JOIN \`like\` l ON p.projectId = l.projectId AND l.userId = ? -- 1: userIdFromToken
+    INNER JOIN \`like\` l ON p.projectId = l.projectId AND l.userId = ?
     LEFT JOIN members m ON p.projectId = m.projectId AND m.state = '참여'
     WHERE 
-        p.type = ?                               -- 2: 프로젝트 유형 필터링
-        AND p.category LIKE CONCAT('%', ?, '%')  -- 3: 프로젝트 분야 포함 검색
-        AND (                                    -- 4: 통합 검색어 조건 시작
+        p.type = ?
+        AND p.category LIKE CONCAT('%', ?, '%')
+        AND (
             p.name LIKE CONCAT('%', ?, '%') OR
             p.type LIKE CONCAT('%', ?, '%') OR
             p.category LIKE CONCAT('%', ?, '%') OR
