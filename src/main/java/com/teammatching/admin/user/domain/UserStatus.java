@@ -29,8 +29,6 @@ public class UserStatus {
 
     private String reason;
 
-    //private LocalDateTime expiresAt;
-
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
@@ -39,5 +37,17 @@ public class UserStatus {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     *'새로운' UserStatus 객체를 안전하게 생성하기 위한
+     * 정적 팩토리 메소드
+     */
+    public static UserStatus of(User user, String status, String reason) {
+        UserStatus userStatus = new UserStatus();
+        userStatus.setUser(user);
+        userStatus.setStatus(status);
+        userStatus.setReason(reason);
+        return userStatus;
     }
 }

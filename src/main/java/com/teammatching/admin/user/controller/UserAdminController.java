@@ -1,10 +1,7 @@
 package com.teammatching.admin.user.controller;
 
 import com.teammatching.admin.global.response.ApiResponse;
-import com.teammatching.admin.user.dto.BannedUserPagingResponse;
-import com.teammatching.admin.user.dto.BannedUserResponse;
-import com.teammatching.admin.user.dto.UserPagingResponse;
-import com.teammatching.admin.user.dto.ReportPagingResponse;
+import com.teammatching.admin.user.dto.*;
 import com.teammatching.admin.user.service.UserAdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,10 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "3. 회원 목록 조회 API", description = "관리자용 회원 목록 조회 기능을 제공하는 API")
 @RequiredArgsConstructor
@@ -71,5 +65,37 @@ public class UserAdminController {
     ) {
         BannedUserPagingResponse bannedUsers = userAdminService.getBannedUsers(pageable);
         return ApiResponse.success("차단된 회원 목록 조회 성공", bannedUsers);
+    }
+
+    /*
+     * 블랙리스트 등록 및 해제 API
+     */
+    @PutMapping("/users/{userId}/status") // API 주소: PUT /admin/users/{userId}/status
+    public ApiResponse<StatusUpdateResponse> updateUserStatus(
+            @PathVariable Integer userId, // {userId} 값을 받음
+            @RequestBody StatusUpdateRequest request // JSON Body를 받음
+    ) {
+        StatusUpdateResponse response = userAdminService.updateUserStatus(userId, request);
+        String message;
+        if ("banned".equals(response.status())) {
+            message = "회원이 블랙리스트에 등록되었습니다.";
+        } else if ("active".equals(response.status())) {
+            message = "회원 계정이 활성화되었습니다.";
+        } else {
+            message = "계정 상태가 성공적으로 변경되었습니다."; // (혹시 모를 기타 상태용)
+        }
+        return ApiResponse.success(message, response);
+    }
+
+    /*
+     * 특정 회원 신고 내역 변경 API
+     */
+    @PutMapping("/reports/{reportId}/status")
+    public ApiResponse<ReportStatusUpdateResponse> updateReportStatus(
+            @PathVariable Integer reportId, //{reportId} 값을 받음
+            @RequestBody ReportStatusUpdateRequest request  //JSON Body를 받음
+    ) {
+        ReportStatusUpdateResponse response = userAdminService.updateReportStatus(reportId, request);
+        return ApiResponse.success("신고 상태가 성공적으로 변경됐습니다.", response);
     }
 }
