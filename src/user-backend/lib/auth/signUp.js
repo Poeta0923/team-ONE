@@ -64,7 +64,7 @@ module.exports = {
             
             // [2-1] techStack 문자열 가공 (AI 입력 전용)
             // 모든 공백과 특수문자를 제거하고 전부 소문자로 변환
-            const aiTechStack = sanitizedPost.techStack
+            const aiTechStack = sanitizedPost.tech_stack
                 .replace(/[^a-zA-Z0-9]/g, '') // 알파벳과 숫자 외 모든 문자(특수문자 및 공백) 제거
                 .toLowerCase();
 
@@ -108,7 +108,7 @@ module.exports = {
                 sanitizedPost.mbti, 
                 sanitizedPost.workStyle, 
                 sanitizedPost.workTime, 
-                sanitizedPost.techStack, // 원본 기술 스택 사용
+                sanitizedPost.tech_stack, // 원본 기술 스택 사용
                 sanitizedPost.interest, 
                 sanitizedPost.gitHub, 
                 sanitizedPost.blog, 
