@@ -55,7 +55,7 @@ module.exports = {
 
             // [1-1] AI 전용 기술 스택 가공
             // 회원가입 시 techStacks에 저장된 로직과 일관성을 유지하기 위함
-            const aiTechStack = sanitizedPost.techStack
+            const aiTechStack = sanitizedPost.tech_stack
                 .replace(/[^a-zA-Z0-9]/g, '')
                 .toLowerCase();
 
@@ -69,7 +69,7 @@ module.exports = {
                 sanitizedPost.mbti,
                 sanitizedPost.workStyle,
                 sanitizedPost.workTime,
-                sanitizedPost.techStack, // 원본 기술 스택 (resumes 테이블)
+                sanitizedPost.tech_stack, // 원본 기술 스택 (resumes 테이블)
                 sanitizedPost.interest,
                 sanitizedPost.gitHub,
                 sanitizedPost.blog,
