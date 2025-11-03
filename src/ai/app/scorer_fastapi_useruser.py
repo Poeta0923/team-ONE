@@ -55,6 +55,7 @@ DMatrixT = Any
 if TYPE_CHECKING:
     from xgboost import Booster as BoosterT
     from xgboost import DMatrix as DMatrixT
+
 # ----------------------------
 # UTC helpers (timezone-aware)
 # ----------------------------
@@ -1020,3 +1021,209 @@ def rerank_infer(req: RerankInferRequest):
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=8091)
+
+# =====================================================================
+# [FRONTEND BRIDGE] 추천 API  +  필요한 헬퍼(스텁 포함)  **SELF-CONTAINED**
+# =====================================================================
+from typing import List as _List, Optional as _Optional, Dict as _Dict
+
+# ---- 브릿지에서 필요한 헬퍼들 (파일 내부에 안전망으로 구현) ----
+# 1) PairFeatures
+try:
+    PairFeatures  # type: ignore
+except NameError:
+    class PairFeatures(BaseModel):
+        user_text: str
+        project_text: str
+        matcher_prob: _Optional[float] = None
+        rank_score: _Optional[float] = None
+        user_mbti: str = ""
+        project_mbti: str = ""
+        user_activity_90d: _Optional[float] = None
+        user_accept_rate_global: _Optional[float] = None
+        user_accept_rate_group: _Optional[float] = None
+        offers_last_30d: _Optional[float] = None
+        accepts_last_30d: _Optional[float] = None
+
+# 2) cosine
+try:
+    _cosine  # type: ignore
+except NameError:
+    def _cosine(a: np.ndarray, b: np.ndarray) -> float:
+        a = a.astype(np.float32); b = b.astype(np.float32)
+        na = float(np.linalg.norm(a)); nb = float(np.linalg.norm(b))
+        if na == 0.0 or nb == 0.0:
+            return 0.0
+        return float(np.dot(a, b) / (na * nb))
+
+# 3) vectorize  (여기선 rank_score 1차원만 사용)
+try:
+    vectorize  # type: ignore
+except NameError:
+    def vectorize(pf: PairFeatures) -> np.ndarray:
+        rs = pf.rank_score if pf.rank_score is not None else 0.0
+        return np.array([rs], dtype=np.float32)
+
+# 4) get_model  (경량 로지스틱 헤드; 실서비스에선 acceptor의 get_model로 교체 권장)
+try:
+    get_model  # type: ignore
+except NameError:
+    class _TinyLogit(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.w = nn.Linear(1, 1)
+            with torch.no_grad():
+                nn.init.normal_(self.w.weight, mean=3.0, std=0.1)  # rank_score에 민감하도록
+                nn.init.zeros_(self.w.bias)
+        def forward(self, x):
+            return self.w(x).squeeze(-1)
+    _tiny_acceptor = _TinyLogit()
+    from acceptor_fastapi import get_model, PairFeatures, vectorize
+
+# ---- 프론트 요청/응답 스키마 ----
+class FrontUser(BaseModel):
+    userId: int
+    job: _Optional[str] = None
+    address: _Optional[str] = None
+    mbti: _Optional[str] = None
+    workStyle: _Optional[str] = None
+    workTime: _Optional[str] = None
+    interest: _Optional[str] = None
+    projectExp: _Optional[bool] = None
+    coverLetter: _Optional[str] = None
+    techStack: _Optional[str] = None
+
+class FrontProject(BaseModel):
+    type: _Optional[str] = None
+    category: _Optional[str] = None
+    tech_stack: _Optional[str] = None
+    recruitment: _Optional[int] = None
+    description: _Optional[str] = None
+
+class FrontRecommendRequest(BaseModel):
+    users: _List[FrontUser]
+    project: FrontProject
+    priority1: _Optional[str] = None
+    priority2: _Optional[str] = None
+    priority3: _Optional[str] = None
+    top_n: int = 4
+
+class FastApiResultItem(BaseModel):
+    id: int   # userId
+    norm: int # 0~100 정규화 점수
+    pob: int  # 0~100 확률(%)
+
+class FrontRecommendResponse(BaseModel):
+    result: _Dict[str, FastApiResultItem]  # "1": {id, norm, pob}, ...
+
+# ---- 내부 유틸: 텍스트 구성 ----
+def _make_user_text(u: FrontUser) -> str:
+    parts = []
+    if u.job: parts.append(f"[JOB] {u.job}")
+    if u.techStack: parts.append(f"[STACK] {u.techStack}")
+    if u.interest: parts.append(f"[INTEREST] {u.interest}")
+    if u.coverLetter: parts.append(f"[COVER] {u.coverLetter}")
+    if u.address: parts.append(f"[ADDR] {u.address}")
+    if u.workStyle: parts.append(f"[WORK_STYLE] {u.workStyle}")
+    if u.workTime: parts.append(f"[WORK_TIME] {u.workTime}")
+    return " ".join(parts).strip()
+
+def _make_project_text(p: FrontProject) -> str:
+    parts = []
+    if p.description: parts.append(f"[DESC] {p.description}")
+    if p.type: parts.append(f"[TYPE] {p.type}")
+    if p.category: parts.append(f"[CATEGORY] {p.category}")
+    if p.tech_stack: parts.append(f"[STACK] {p.tech_stack}")
+    return " ".join(parts).strip()
+
+# ---- 내부 유틸: 우선순위 → 보조 가중치 ----
+def _priority_weights(p1: _Optional[str], p2: _Optional[str], p3: _Optional[str]) -> _Dict[str, float]:
+    base = {"mbti": 0.0, "workstyle": 0.0, "address": 0.0}
+    order = [p1, p2, p3]
+    for i, key in enumerate(order):
+        if key is None:
+            continue
+        w = 0.06 if i == 0 else (0.04 if i == 1 else 0.02)
+        if "MBTI" in key:
+            base["mbti"] = w
+        elif "업무 방식" in key:
+            base["workstyle"] = w
+        elif "거주지" in key:
+            base["address"] = w
+    return base
+
+# ---- 메인 엔드포인트 ----
+@app.post("/frontend/recommend", response_model=FrontRecommendResponse)
+def frontend_recommend(req: FrontRecommendRequest):
+    """
+    프론트 스키마 그대로 받아서:
+      1) 텍스트 코사인으로 rank_score 계산
+      2) 경량 수락예측 모델로 prob 계산
+      3) rank_score → 0..100 정규화 => norm, prob*100 => pob
+      4) 상위 N명 반환
+    """
+    if not req.users:
+        raise HTTPException(400, "users is required and cannot be empty")
+
+    p_text = _make_project_text(req.project)
+
+    # 수락예측(경량) 모델
+    model, meta, mid = get_model(None)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+    # 우선순위 가중
+    pri_w = _priority_weights(req.priority1, req.priority2, req.priority3)
+
+    # 임베딩
+    user_texts = [_make_user_text(u) for u in req.users]
+    emb_users = encode_texts(user_texts)
+    emb_proj  = encode_texts([p_text])[0]
+
+    rank_scores = []
+    pair_features = []
+    for u, u_text, u_emb in zip(req.users, user_texts, emb_users):
+        base_cos = _cosine(u_emb, emb_proj)
+        bonus = 0.0
+        if pri_w["mbti"] > 0 and u.mbti:
+            bonus += pri_w["mbti"] * 0.5
+        if pri_w["workstyle"] > 0 and u.workStyle:
+            bonus += pri_w["workstyle"] * 0.5
+        if pri_w["address"] > 0 and u.address:
+            bonus += pri_w["address"] * 0.5
+        rscore = float(base_cos + bonus)
+        rank_scores.append(rscore)
+
+        pf = PairFeatures(
+            user_text=u_text,
+            project_text=p_text,
+            matcher_prob=None,
+            rank_score=rscore,
+            user_mbti=(u.mbti or ""),
+            project_mbti="",
+            user_activity_90d=None, user_accept_rate_global=None,
+            user_accept_rate_group=None, offers_last_30d=None, accepts_last_30d=None,
+        )
+        pair_features.append((u.userId, pf))
+
+    # 로지스틱 통과
+    X = np.stack([vectorize(pf) for (_, pf) in pair_features]).astype(np.float32)
+    with torch.no_grad():
+        logits = model(torch.from_numpy(X).to(device)).cpu().numpy()
+    probs = 1.0/(1.0+np.exp(-np.clip(logits, -30, 30)))  # [0,1]
+
+    # rank_score → 0..100
+    rs = np.array(rank_scores, dtype=np.float32)
+    norms = (np.clip(rs, -1.0, 1.0) + 1.0) * 50.0
+
+    rows = []
+    for (u_id, _), n, p in zip(pair_features, norms.tolist(), probs.tolist()):
+        rows.append({"userId": int(u_id), "norm": int(round(n)), "pob": int(round(p * 100.0))})
+    rows.sort(key=lambda x: (x["pob"], x["norm"]), reverse=True)
+    top = rows[: max(1, req.top_n)]
+
+    out: _Dict[str, FastApiResultItem] = {}
+    for rank, item in enumerate(top, start=1):
+        out[str(rank)] = FastApiResultItem(id=item["userId"], norm=item["norm"], pob=item["pob"])
+
+    return FrontRecommendResponse(result=out)
