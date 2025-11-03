@@ -12,8 +12,8 @@ const sanitize = require('../util/sanitize');
 const util = require('util');
 
 // fast api 요청 url 주소
-const fastapiUrl = 'http://127.0.0.1:3004/recommend';
-const POST = 'POST'; 
+const fastapiUrl = 'http://127.0.0.1:8091/frontend/recommend';
+const POST = 'POST';
 
 // =================================================================
 // 2. Utility Functions
@@ -42,7 +42,11 @@ module.exports = {
 
     recommand: async (req, res) => {
         const userIdFromToken = req.user.userId;
-        const projectId = sanitize(req.params.projectId); 
+        const projectId = req.params.projectId;
+        // 사용자 입력 추출 및 Sanitization
+        const sanitizedPost = sanitize.sanitizeObject(req.body);
+
+        logger.info(`[Project Recommand] 클라이언트 입력 데이터: ${JSON.stringify(sanitizedPost)}`);
 
         logger.info(`[Project Recommand] 프로젝트 ID: ${projectId} 사용자 추천 시작 (사용자 ID: ${userIdFromToken})`);
 
@@ -59,13 +63,11 @@ module.exports = {
             r.interest,
             r.projectExp,
             r.coverLetter,
-            t.techStack 
+            r.techStack
         FROM
             users u
         INNER JOIN
             resumes r ON u.userId = r.userId
-        LEFT JOIN
-            techStacks t ON u.userId = t.userId
         ORDER BY
             u.userId;`;
 
@@ -73,14 +75,17 @@ module.exports = {
         const sqlProject = `SELECT * FROM projects WHERE projectId = ?`;
 
         // [1-3] 추천 정보 저장 쿼리
-        const sqlRecommand = `INSERT INTO recommand (projectId, member, score) VALUES (?, ?, ?)`;
+        const sqlRecommand = 
+            `INSERT INTO recommand (projectId, member, score) 
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE 
+             score = VALUES(score);`;
 
         // 최종적으로 반환할 상위 4명의 사용자 정보를 담을 배열
         let top4Users = [];
 
         try {
             // [2] 데이터 조회
-            
             // [2-1] 사용자 정보 & 이력서 정보 조회
             const resultUsers = await queryPromise(sqlUsers);
 
@@ -94,11 +99,21 @@ module.exports = {
             }
             const projectData = resultProject[0];
 
+            // 우선순위 값 추출 및 배열 생성
+            const priority1 = sanitizedPost.priority1;
+            const priority2 = sanitizedPost.priority2;
+            const priority3 = sanitizedPost.priority3;
+
             // [3] fast api 서버로 요청할 데이터 구성
             const requestData = {
                 "users": resultUsers,
-                "project": projectData
+                "project": projectData,
+                "priority1": priority1,
+                "priority2": priority2,
+                "priority3": priority3,
             };
+            
+            logger.debug(`[Project Recommand] FastAPI 요청 데이터 (Priorities 포함): ${JSON.stringify(requestData)}`);
 
             // [4] fast api 서버로 요청
             const response = await fetch(fastapiUrl, {
@@ -115,6 +130,9 @@ module.exports = {
 
             // [5] 요청 성공 시 응답 데이터 처리 및 DB 저장
             const responseJson = await response.json();
+
+            logger.debug(`[Project Recommand] FastAPI 응답 데이터: ${JSON.stringify(responseJson)}`);
+
             const rawResults = responseJson.result; 
 
             // [5-1] rawResults 객체를 배열로 변환
@@ -125,7 +143,7 @@ module.exports = {
                 const item = recommendedUsers[i];
                 
                 // 1. DB에 저장할 값 및 최종 응답에 포함할 값 정의 및 정제
-                const memberId = sanitize(item.id);
+                const memberId = String(item.id); 
                 const score = parseFloat(item.norm).toFixed(2); 
                 const probability = parseFloat(item.pob).toFixed(4); 
 
