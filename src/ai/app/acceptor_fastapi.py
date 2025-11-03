@@ -39,7 +39,6 @@ except Exception:
 # ------------------------------------------------------------------------------
 APP_NAME = "Acceptance Probability Model Service"
 FEATURES = [
-    # ⚠️ 실제 피처명/순서에 맞게 수정
     "rank_score",
     "matcher_prob",
     "cos_sim",
@@ -77,7 +76,7 @@ class TrainRequest(BaseModel):
     subsample: float = 0.8
     colsample_bytree: float = 0.8
     reg_lambda: float = 2.0
-    early_stopping_rounds: int = 50     # 구버전이면 무시됨(호환 래퍼 처리)
+    early_stopping_rounds: int = 50
     tree_method: Literal["hist", "gpu_hist"] = "hist"
     calibrate: Optional[Literal["isotonic", "sigmoid"]] = None
     calibrate_cv: int = 3

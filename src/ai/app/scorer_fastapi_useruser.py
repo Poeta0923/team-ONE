@@ -40,7 +40,7 @@ import logging
 import random
 from typing import List, Dict, Optional, Literal, Tuple, Any, TYPE_CHECKING
 from datetime import datetime, timezone
-
+import requests
 import numpy as np
 import torch
 import torch.nn as nn
@@ -55,7 +55,7 @@ DMatrixT = Any
 if TYPE_CHECKING:
     from xgboost import Booster as BoosterT
     from xgboost import DMatrix as DMatrixT
-
+ACCEPTOR_URL = os.getenv("ACCEPTOR_URL", "http://localhost:8093")
 # ----------------------------
 # UTC helpers (timezone-aware)
 # ----------------------------
@@ -1022,101 +1022,56 @@ if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=8091)
 
-# =====================================================================
-# [FRONTEND BRIDGE] 추천 API  +  필요한 헬퍼(스텁 포함)  **SELF-CONTAINED**
-# =====================================================================
-from typing import List as _List, Optional as _Optional, Dict as _Dict
 
-# ---- 브릿지에서 필요한 헬퍼들 (파일 내부에 안전망으로 구현) ----
-# 1) PairFeatures
-try:
-    PairFeatures  # type: ignore
-except NameError:
-    class PairFeatures(BaseModel):
-        user_text: str
-        project_text: str
-        matcher_prob: _Optional[float] = None
-        rank_score: _Optional[float] = None
-        user_mbti: str = ""
-        project_mbti: str = ""
-        user_activity_90d: _Optional[float] = None
-        user_accept_rate_global: _Optional[float] = None
-        user_accept_rate_group: _Optional[float] = None
-        offers_last_30d: _Optional[float] = None
-        accepts_last_30d: _Optional[float] = None
+# ==========================
+# [FRONTEND BRIDGE] 추천 API
+# ==========================
+import os, math
+import requests
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Tuple
 
-# 2) cosine
-try:
-    _cosine  # type: ignore
-except NameError:
-    def _cosine(a: np.ndarray, b: np.ndarray) -> float:
-        a = a.astype(np.float32); b = b.astype(np.float32)
-        na = float(np.linalg.norm(a)); nb = float(np.linalg.norm(b))
-        if na == 0.0 or nb == 0.0:
-            return 0.0
-        return float(np.dot(a, b) / (na * nb))
-
-# 3) vectorize  (여기선 rank_score 1차원만 사용)
-try:
-    vectorize  # type: ignore
-except NameError:
-    def vectorize(pf: PairFeatures) -> np.ndarray:
-        rs = pf.rank_score if pf.rank_score is not None else 0.0
-        return np.array([rs], dtype=np.float32)
-
-# 4) get_model  (경량 로지스틱 헤드; 실서비스에선 acceptor의 get_model로 교체 권장)
-try:
-    get_model  # type: ignore
-except NameError:
-    class _TinyLogit(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.w = nn.Linear(1, 1)
-            with torch.no_grad():
-                nn.init.normal_(self.w.weight, mean=3.0, std=0.1)  # rank_score에 민감하도록
-                nn.init.zeros_(self.w.bias)
-        def forward(self, x):
-            return self.w(x).squeeze(-1)
-    _tiny_acceptor = _TinyLogit()
-    from acceptor_fastapi import get_model, PairFeatures, vectorize
+# ---- 외부 서비스 엔드포인트 (환경변수로 오버라이드 가능) ----
+ACCEPTOR_URL = os.environ.get("ACCEPTOR_URL", "http://localhost:8093")
+TRAITS_URL   = os.environ.get("TRAITS_URL",   "http://localhost:8092")
 
 # ---- 프론트 요청/응답 스키마 ----
 class FrontUser(BaseModel):
     userId: int
-    job: _Optional[str] = None
-    address: _Optional[str] = None
-    mbti: _Optional[str] = None
-    workStyle: _Optional[str] = None
-    workTime: _Optional[str] = None
-    interest: _Optional[str] = None
-    projectExp: _Optional[bool] = None
-    coverLetter: _Optional[str] = None
-    techStack: _Optional[str] = None
+    job: Optional[str] = None
+    address: Optional[str] = None
+    mbti: Optional[str] = None
+    workStyle: Optional[str] = None
+    workTime: Optional[str] = None
+    interest: Optional[str] = None
+    projectExp: Optional[bool] = None
+    coverLetter: Optional[str] = None
+    techStack: Optional[str] = None
 
 class FrontProject(BaseModel):
-    type: _Optional[str] = None
-    category: _Optional[str] = None
-    tech_stack: _Optional[str] = None
-    recruitment: _Optional[int] = None
-    description: _Optional[str] = None
+    type: Optional[str] = None
+    category: Optional[str] = None
+    tech_stack: Optional[str] = None
+    recruitment: Optional[int] = None
+    description: Optional[str] = None
 
 class FrontRecommendRequest(BaseModel):
-    users: _List[FrontUser]
+    users: List[FrontUser]
     project: FrontProject
-    priority1: _Optional[str] = None
-    priority2: _Optional[str] = None
-    priority3: _Optional[str] = None
+    priority1: Optional[str] = None   # "거주지" | "MBTI 비슷한 성향" | "선호 업무 방식" ...
+    priority2: Optional[str] = None
+    priority3: Optional[str] = None
     top_n: int = 4
 
 class FastApiResultItem(BaseModel):
     id: int   # userId
-    norm: int # 0~100 정규화 점수
-    pob: int  # 0~100 확률(%)
+    norm: int # 0~100 정규화 점수 (정수)
+    pob: int  # 0~100 확률(%) 정수
 
 class FrontRecommendResponse(BaseModel):
-    result: _Dict[str, FastApiResultItem]  # "1": {id, norm, pob}, ...
+    result: Dict[str, FastApiResultItem]
 
-# ---- 내부 유틸: 텍스트 구성 ----
+# ---- 유틸: 텍스트 구성 ----
 def _make_user_text(u: FrontUser) -> str:
     parts = []
     if u.job: parts.append(f"[JOB] {u.job}")
@@ -1126,6 +1081,7 @@ def _make_user_text(u: FrontUser) -> str:
     if u.address: parts.append(f"[ADDR] {u.address}")
     if u.workStyle: parts.append(f"[WORK_STYLE] {u.workStyle}")
     if u.workTime: parts.append(f"[WORK_TIME] {u.workTime}")
+    if u.mbti: parts.append(f"[MBTI] {u.mbti}")
     return " ".join(parts).strip()
 
 def _make_project_text(p: FrontProject) -> str:
@@ -1136,12 +1092,18 @@ def _make_project_text(p: FrontProject) -> str:
     if p.tech_stack: parts.append(f"[STACK] {p.tech_stack}")
     return " ".join(parts).strip()
 
-# ---- 내부 유틸: 우선순위 → 보조 가중치 ----
-def _priority_weights(p1: _Optional[str], p2: _Optional[str], p3: _Optional[str]) -> _Dict[str, float]:
+# ---- 유틸: 코사인 ----
+def _cosine(a: np.ndarray, b: np.ndarray) -> float:
+    na = float(np.linalg.norm(a)); nb = float(np.linalg.norm(b))
+    if na <= 0.0 or nb <= 0.0: return 0.0
+    return float((a * b).sum() / (na * nb + 1e-12))
+
+# ---- 우선순위 → 보조 가중치 ----
+def _priority_weights(p1: Optional[str], p2: Optional[str], p3: Optional[str]) -> Dict[str, float]:
     base = {"mbti": 0.0, "workstyle": 0.0, "address": 0.0}
     order = [p1, p2, p3]
     for i, key in enumerate(order):
-        if key is None:
+        if not key: 
             continue
         w = 0.06 if i == 0 else (0.04 if i == 1 else 0.02)
         if "MBTI" in key:
@@ -1152,38 +1114,106 @@ def _priority_weights(p1: _Optional[str], p2: _Optional[str], p3: _Optional[str]
             base["address"] = w
     return base
 
-# ---- 메인 엔드포인트 ----
+def _binary_match(a: Optional[str], b: Optional[str]) -> float:
+    if not a or not b: return 0.0
+    return 1.0 if a.strip() == b.strip() else 0.0
+
+# ---- traits_fastapi HTTP 호출 ----
+def _traits_probs(text: str) -> Dict[str, float]:
+    """
+    traits_fastapi의 /score 호출해 {label: prob} 딕셔너리 반환.
+    ENV TRAITS_URL=/score 기준.
+    """
+    url = f"{TRAITS_URL}/score"
+    try:
+        r = requests.post(url, json={"text": text}, timeout=5)
+        r.raise_for_status()
+        js = r.json()
+        # 형태: {'OK': True, 'data': {'model_id': ..., 'labels': [...], 'probs': {'label': prob, ...}}}
+        return js["data"]["probs"]
+    except Exception:
+        # traits 모델이 아직 없거나 실패한 경우, 빈 벡터 처리
+        return {}
+
+def _align_trait_vecs(a: Dict[str, float], b: Dict[str, float]) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    a, b의 공통 레이블 순서로 벡터화. 공통이 없으면 0-벡터.
+    """
+    if not a or not b:
+        return np.zeros((0,), dtype=np.float32), np.zeros((0,), dtype=np.float32)
+    common = sorted(set(a.keys()) & set(b.keys()))
+    if not common:
+        return np.zeros((0,), dtype=np.float32), np.zeros((0,), dtype=np.float32)
+    va = np.array([float(a[k]) for k in common], dtype=np.float32)
+    vb = np.array([float(b[k]) for k in common], dtype=np.float32)
+    return va, vb
+
+# ---- acceptor_fastapi HTTP 호출 ----
+def _acceptor_probs(items: List[Dict[str, float]]) -> List[float]:
+    """
+    items: [{ "cosine": [0..1], "rank_score": [0..1] }, ...]
+    반환: 확률 리스트 [0..1]
+    """
+    url = f"{ACCEPTOR_URL}/train/inference/sandbox"
+    try:
+        r = requests.post(url, json={"items": items}, timeout=5)
+        r.raise_for_status()
+        js = r.json()
+        # 형태: {'OK': True, 'data': [{'prob': float, 'pred': 0/1}, ...], 'threshold': ...}
+        return [float(x.get("prob", 0.0)) for x in js.get("data", [])]
+    except Exception:
+        # 실패 시 안전하게 0.11로 고정되던 문제 방지: 0.0으로
+        return [0.0 for _ in items]
+
 @app.post("/frontend/recommend", response_model=FrontRecommendResponse)
 def frontend_recommend(req: FrontRecommendRequest):
     """
-    프론트 스키마 그대로 받아서:
-      1) 텍스트 코사인으로 rank_score 계산
-      2) 경량 수락예측 모델로 prob 계산
-      3) rank_score → 0..100 정규화 => norm, prob*100 => pob
-      4) 상위 N명 반환
+    파이프라인:
+      1) 텍스트 임베딩 코사인: user_text vs project_text  => text_cos ∈ [-1, 1]
+      2) traits_fastapi: user_text vs project_text 각각 확률벡터 => trait_cos ∈ [0, 1] 근사
+      3) 우선순위(거주지/MBTI/업무방식) 보너스
+      4) rank_score = α*text_cos_unit + β*trait_cos (+ bonus)    (text_cos_unit = (text_cos+1)/2)
+      5) acceptor_fastapi(items=[{cosine: text_cos_unit, rank_score}]) => pob 확률
+      6) rank_score 정규화 0~100 → norm, pob*100 → pob(%)
+      7) pob, norm 기준 내림차순 정렬 후 상위 N 반환
     """
     if not req.users:
         raise HTTPException(400, "users is required and cannot be empty")
 
+    # 1) 텍스트 (임베딩용)
     p_text = _make_project_text(req.project)
+    user_texts = [_make_user_text(u) for u in req.users]
 
-    # 수락예측(경량) 모델
-    model, meta, mid = get_model(None)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    # 1-1) SBERT 임베딩
+    emb_users = encode_texts(user_texts)         # (N, D)
+    emb_proj  = encode_texts([p_text])[0]        # (D,)
 
-    # 우선순위 가중
+    # 2) traits 확률 벡터
+    proj_traits = _traits_probs(p_text)          # dict(label->prob)
+    user_traits_list = [_traits_probs(t) for t in user_texts]
+
+    # 3) 우선순위 보너스
     pri_w = _priority_weights(req.priority1, req.priority2, req.priority3)
 
-    # 임베딩
-    user_texts = [_make_user_text(u) for u in req.users]
-    emb_users = encode_texts(user_texts)
-    emb_proj  = encode_texts([p_text])[0]
-
+    # 4) 후보별 점수 계산
+    alpha = 0.8  # 텍스트 임베딩 가중
+    beta  = 0.2  # 성향(트레이트) 가중  (원하면 조정)
     rank_scores = []
-    pair_features = []
-    for u, u_text, u_emb in zip(req.users, user_texts, emb_users):
-        base_cos = _cosine(u_emb, emb_proj)
+    acceptor_items = []
+    rows_cache = []  # 후반 매핑용
+
+    for u, u_text, u_emb, u_traits in zip(req.users, user_texts, emb_users, user_traits_list):
+        # 텍스트 코사인: [-1,1] -> [0,1] 매핑
+        text_cos = _cosine(u_emb, emb_proj)
+        text_cos_unit = (text_cos + 1.0) / 2.0
+
+        # 성향 코사인 (공통 라벨만)
+        vt_u, vt_p = _align_trait_vecs(u_traits, proj_traits)
+        trait_cos = 0.0 if vt_u.size == 0 else _cosine(vt_u, vt_p)
+        # trait_cos는 [-1,1] 범위지만 확률벡터라 거의 [0,1] 부근 → 안전하게 [0,1] 클램프
+        trait_cos = float(np.clip(trait_cos, 0.0, 1.0))
+
+        # 우선순위 보너스(가벼운 가점) – 프로젝트에 기준값이 없으므로 "존재" 보너스 위주
         bonus = 0.0
         if pri_w["mbti"] > 0 and u.mbti:
             bonus += pri_w["mbti"] * 0.5
@@ -1191,38 +1221,46 @@ def frontend_recommend(req: FrontRecommendRequest):
             bonus += pri_w["workstyle"] * 0.5
         if pri_w["address"] > 0 and u.address:
             bonus += pri_w["address"] * 0.5
-        rscore = float(base_cos + bonus)
-        rank_scores.append(rscore)
 
-        pf = PairFeatures(
-            user_text=u_text,
-            project_text=p_text,
-            matcher_prob=None,
-            rank_score=rscore,
-            user_mbti=(u.mbti or ""),
-            project_mbti="",
-            user_activity_90d=None, user_accept_rate_global=None,
-            user_accept_rate_group=None, offers_last_30d=None, accepts_last_30d=None,
-        )
-        pair_features.append((u.userId, pf))
+        # 간단한 문자열 매칭 보너스(있다면 약간 더)
+        # 예: 프로젝트 설명에 '원격/출근' 키워드가 있으면 반영하고 싶다면 여기에 확장 가능
+        # (현재는 존재 가점만 적용)
 
-    # 로지스틱 통과
-    X = np.stack([vectorize(pf) for (_, pf) in pair_features]).astype(np.float32)
-    with torch.no_grad():
-        logits = model(torch.from_numpy(X).to(device)).cpu().numpy()
-    probs = 1.0/(1.0+np.exp(-np.clip(logits, -30, 30)))  # [0,1]
+        # 최종 rank_score (0~1 권장)
+        rank_score_unit = float(np.clip(alpha * text_cos_unit + beta * trait_cos + bonus, 0.0, 1.0))
+        rank_scores.append(rank_score_unit)
 
-    # rank_score → 0..100
-    rs = np.array(rank_scores, dtype=np.float32)
-    norms = (np.clip(rs, -1.0, 1.0) + 1.0) * 50.0
+        acceptor_items.append({
+            "cosine": float(np.clip(text_cos_unit, 0.0, 1.0)),
+            "rank_score": float(np.clip(rank_score_unit, 0.0, 1.0)),
+            # 필요하면 추가 피처 키를 acceptor에 맞춰 더 보낼 수 있음
+        })
+        rows_cache.append({"userId": int(u.userId)})
 
+    # 5) acceptor_fastapi 호출 → 확률
+    probs = _acceptor_probs(acceptor_items)  # [0..1]
+
+    # 6) rank_score → 0..100 정규화
+    rs = np.asarray(rank_scores, dtype=np.float32)
+    rs_min, rs_max = float(rs.min()), float(rs.max())
+    if abs(rs_max - rs_min) < 1e-12:
+        norms = np.full_like(rs, 100.0)
+    else:
+        norms = (rs - rs_min) / (rs_max - rs_min) * 100.0
+
+    # 7) 정렬 및 top-N 선택: pob 우선, 동률이면 norm
     rows = []
-    for (u_id, _), n, p in zip(pair_features, norms.tolist(), probs.tolist()):
-        rows.append({"userId": int(u_id), "norm": int(round(n)), "pob": int(round(p * 100.0))})
+    for item, n, p in zip(rows_cache, norms.tolist(), probs):
+        rows.append({
+            "userId": item["userId"],
+            "norm": int(round(n)),
+            "pob":  int(round(float(np.clip(p, 0.0, 1.0)) * 100.0)),
+        })
     rows.sort(key=lambda x: (x["pob"], x["norm"]), reverse=True)
     top = rows[: max(1, req.top_n)]
 
-    out: _Dict[str, FastApiResultItem] = {}
+    # 8) {"1": {...}, "2": {...}, ...} 형태로 반환
+    out: Dict[str, FastApiResultItem] = {}
     for rank, item in enumerate(top, start=1):
         out[str(rank)] = FastApiResultItem(id=item["userId"], norm=item["norm"], pob=item["pob"])
 
