@@ -41,9 +41,16 @@ APP_NAME = "Acceptance Probability Model Service"
 FEATURES = [
     "rank_score",
     "matcher_prob",
-    "cos_sim",
+    "cosine",
     "user_activity_90d",
     "user_accept_rate_global",
+    "traits_cosine",
+    "traits_l1",
+    "traits_l2",
+    "mbti_match_cnt",
+    "mbti_ge3",
+    "offers_last_30d",
+    "accepts_last_30d",
 ]
 MODEL_DIR = Path("./models/acceptor")
 LATEST_SYMLINK = MODEL_DIR / "latest"
@@ -56,9 +63,17 @@ META_FILENAME = "meta.json"
 class AcceptX(BaseModel):
     rank_score: Optional[float] = None
     matcher_prob: Optional[float] = None
-    cos_sim: Optional[float] = None
+    cosine: Optional[float] = None
     user_activity_90d: Optional[float] = None
     user_accept_rate_global: Optional[float] = None
+
+    traits_cosine: Optional[float] = None
+    traits_l1: Optional[float] = None
+    traits_l2: Optional[float] = None
+    mbti_match_cnt: Optional[int] = None
+    mbti_ge3: Optional[int] = None
+    offers_last_30d: Optional[int] = None
+    accepts_last_30d: Optional[int] = None
 
 class AcceptItem(BaseModel):
     x: AcceptX

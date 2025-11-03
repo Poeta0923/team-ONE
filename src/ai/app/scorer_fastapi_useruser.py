@@ -1,34 +1,15 @@
 from __future__ import annotations
 """
 User↔User Matching Scorer API (Ranking / Regression)
-- Mirrors the endpoints/behavior of your two-tower scorer (user↔project) but specialized for user↔user.
-- Facet-aware text inputs (skill / trait / activity / profile) are embedded with the same
-  SentenceTransformer used by your existing service. Each user is represented by
-  the concatenation [emb(skill), emb(trait), emb(activity)], where missing facets
-  fall back to profile_text.
+and [FRONTEND BRIDGE] /frontend/recommend
 
-Exposed endpoints
------------------
-GET  /train/health
-POST /train/train                       -> start a training job (objective = 'rank' | 'regression')
-GET  /train/jobs/{job_id}               -> job status
-GET  /train/models                      -> list saved models
-GET  /train/models/{model_id}           -> model metadata
-POST /train/evaluate                    -> offline evaluation (NDCG/MRR/Precision@K for rank, ROC-AUC/PR-AUC/LogLoss for regression)
-POST /score                             -> single pair scoring
-POST /train/inference/sandbox           -> batch scoring for sandbox/testing
-POST /train/evaluate_candidate          -> candidate generation eval (HitRate@K / Recall@K + L2 norm stats)
-POST /train/evaluate_candidate_demo     -> DEMO: generate synthetic pool/queries and evaluate Top-K (default: 100 users, K=4)
+- TwoTower user↔user matcher (rank/regression)
+- Facet-aware embeddings (skill/trait/activity with fallback to profile_text)
+- Reranker (XGBoost) optional
+- Frontend bridge that computes (norm, pob) and respects user priorities
 
-How to run
-----------
+Run:
 $ uvicorn scorer_fastapi_useruser:app --host 0.0.0.0 --port 8091
-
-Notes
------
-- Loads the latest embedding model from ./models/embeddings/latest if present, otherwise BASE_MODEL.
-- Saves trained matcher models under ./models/useruser_matcher/{timestamp[-tag]}/ and maintains a 'latest' pointer.
-- Compatible with your scorer_fastapi flow and curl usage.
 """
 
 import os
@@ -40,22 +21,32 @@ import logging
 import random
 from typing import List, Dict, Optional, Literal, Tuple, Any, TYPE_CHECKING
 from datetime import datetime, timezone
-import requests
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
+import requests
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
+
+# ========================
+# CONFIG & LOGGING
+# ========================
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 BoosterT = Any
 DMatrixT = Any
 if TYPE_CHECKING:
     from xgboost import Booster as BoosterT
     from xgboost import DMatrix as DMatrixT
-ACCEPTOR_URL = os.getenv("ACCEPTOR_URL", "http://localhost:8093")
+
+# 외부 서비스 엔드포인트 (환경변수로 오버라이드 가능)
+ACCEPTOR_URL = os.getenv("ACCEPTOR_URL", "http://localhost:8093")  # acceptor root (expects /score)
+TRAITS_URL   = os.getenv("TRAITS_URL",   "http://localhost:8092")  # traits root (expects /score)
+
 # ----------------------------
 # UTC helpers (timezone-aware)
 # ----------------------------
@@ -331,7 +322,7 @@ class CandidateEvalRequest(BaseModel):
     index: CandidateIndex
     queries: list[CandidateQuery]
     k: int = 10
-    metric: str = "cosine"
+    metric: str = "cos_sim"
     bins: int = 20
 
 # ----------------------------
@@ -715,325 +706,36 @@ def evaluate(req: EvalRequest):
                                      'mrr': float(np.mean(mrrs)) if mrrs else 0.0,
                                      f'precision@{req.k}': float(np.mean(precisions)) if precisions else 0.0}}
 
-# ----------------------------
-# Candidate-generation evaluation (HitRate@K / Recall@K + L2 norms)
-# ----------------------------
-@app.post("/train/evaluate_candidate")
-def evaluate_candidate(req: CandidateEvalRequest):
-    cand_ids = np.array(req.index.candidate_ids)
-    C = np.array(req.index.candidate_embs, dtype=np.float32)  # [Nc, D]
-    if C.ndim != 2 or len(cand_ids) != C.shape[0]:
-        raise HTTPException(400, "candidate_ids and candidate_embs shape mismatch")
-    Nc = C.shape[0]
-    if Nc == 0:
-        raise HTTPException(400, "candidate pool is empty")
-    if not req.queries:
-        raise HTTPException(400, "queries is empty")
-
-    cand_norm = l2_norms(C)
-    eps = 1e-12
-    K_req = max(1, int(req.k))
-    K_eff_global = min(K_req, Nc)
-
-    hit_list, recall_list = [], []
-    q_norms = []
-
-    for q in req.queries:
-        qv = np.asarray(q.query_emb, dtype=np.float32).reshape(1, -1)  # [1, D]
-        if qv.ndim != 2 or qv.shape[1] != C.shape[1]:
-            raise HTTPException(400, f"query_emb dim mismatch (expect D={C.shape[1]})")
-        qn_val = float(l2_norms(qv)[0])
-        q_norms.append(qn_val)
-
-        if req.metric == "cosine":
-            if qn_val < eps:
-                sim = np.zeros((Nc,), dtype=np.float32)
-            else:
-                denom = max(qn_val, eps) * np.maximum(cand_norm, eps)
-                sim = (C @ qv.squeeze(0)) / denom
-        elif req.metric == "dot":
-            sim = (C @ qv.squeeze(0))
-        else:
-            raise HTTPException(400, "metric must be 'cosine' or 'dot'")
-
-        K_eff = min(K_req, Nc)
-        topk_idx = np.argpartition(-sim, K_eff - 1)[:K_eff]
-        topk_sorted = topk_idx[np.argsort(-sim[topk_idx])]
-
-        labels = np.isin(cand_ids[topk_sorted], np.array(q.positive_ids)).astype(np.int32)
-        total_pos = max(1, len(q.positive_ids))
-        hit_list.append(hitrate_at_k(labels, K_eff))
-        recall_list.append(recall_at_k(labels, total_pos, K_eff))
-
-    hit = float(np.mean(hit_list)) if hit_list else 0.0
-    rec = float(np.mean(recall_list)) if recall_list else 0.0
-
-    cn_stats = {
-        "min": float(cand_norm.min()) if cand_norm.size else 0.0,
-        "max": float(cand_norm.max()) if cand_norm.size else 0.0,
-        "mean": float(cand_norm.mean()) if cand_norm.size else 0.0,
-        "std": float(cand_norm.std()) if cand_norm.size else 0.0,
-        "hist": hist_counts(cand_norm, bins=req.bins),
-    }
-    qn = np.array(q_norms, dtype=np.float32)
-    qn_stats = {
-        "min": float(qn.min()) if qn.size else 0.0,
-        "max": float(qn.max()) if qn.size else 0.0,
-        "mean": float(qn.mean()) if qn.size else 0.0,
-        "std": float(qn.std()) if qn.size else 0.0,
-        "hist": hist_counts(qn, bins=req.bins) if qn.size else {"edges": [], "counts": []},
-    }
-
-    return {
-        "OK": True,
-        "k": int(K_eff_global),
-        "metrics": {"HitRate@K": hit, "Recall@K": rec},
-        "l2_norm": {"candidates": cn_stats, "queries": qn_stats}
-    }
-
-# ----------------------------
-# DEMO: generate pool & queries internally and evaluate Top-K
-# ----------------------------
-class DemoEvalRequest(BaseModel):
-    n_candidates: int = 100
-    n_queries: int = 500
-    k: int = 4
-    metric: str = "cosine"
-    bins: int = 30
-    seed: Optional[int] = 42
-
-def _demo_make_candidates(n_candidates: int) -> Dict[str, Any]:
-    ids = [f"u{idx:04d}" for idx in range(n_candidates)]
-    cats = ["vision","nlp","rl","rec","cv","mlops","data","backend","frontend","mobile"]
-    traits = ["leader","detail","creative","team","fast","reliable","curious"]
-    acts = ["kaggle","paper","opensource","hackathon","blog","meetup"]
-    profiles = ["student","engineer","researcher","designer"]
-
-    skill_texts, trait_texts, act_texts, prof_texts = [], [], [], []
-    for _ in range(n_candidates):
-        s = " ".join(random.sample(cats, k=random.randint(2,3)))
-        t = " ".join(random.sample(traits, k=2))
-        a = " ".join(random.sample(acts, k=1))
-        p = random.choice(profiles)
-        skill_texts.append(s); trait_texts.append(t); act_texts.append(a); prof_texts.append(p)
-
-    fused = []
-    for s, t, a, p in zip(skill_texts, trait_texts, act_texts, prof_texts):
-        fused.append(fuse_user_embedding(UserFacet(skill_text=s, trait_text=t, activity_text=a, profile_text=p)))
-    fused = np.stack(fused)  # (N, 3D)
-    return {"candidate_ids": ids, "candidate_embs": fused.tolist()}
-
-def _demo_make_queries(candidates: Dict[str, Any], n_queries: int,
-                       positives_per_query=(1, 3)) -> List[Dict[str, Any]]:
-    cand_ids = candidates["candidate_ids"]
-    cand_embs = np.array(candidates["candidate_embs"], dtype=np.float32)
-    N = len(cand_ids); D = cand_embs.shape[1]
-    queries = []
-    for i in range(n_queries):
-        anchor_idx = random.randrange(N)
-        q = cand_embs[anchor_idx].copy()
-        q += np.random.normal(0, 0.01, size=D).astype(np.float32)  # 작은 노이즈
-        pos_cnt = random.randint(positives_per_query[0], positives_per_query[1])
-        neighbor_pool = list(range(max(0, anchor_idx-5), min(N, anchor_idx+6)))
-        if anchor_idx in neighbor_pool:
-            neighbor_pool.remove(anchor_idx)
-        random.shuffle(neighbor_pool)
-        positives = [cand_ids[anchor_idx]] + [cand_ids[j] for j in neighbor_pool[:max(0, pos_cnt-1)]]
-        queries.append({"query_id": f"q{i:05d}", "query_emb": q.tolist(), "positive_ids": positives})
-    return queries
-
-@app.post("/train/evaluate_candidate_demo")
-def evaluate_candidate_demo(req: DemoEvalRequest):
-    if req.seed is not None:
-        random.seed(req.seed)
-        np.random.seed(req.seed)
-    index = _demo_make_candidates(max(1, int(req.n_candidates)))
-    queries = _demo_make_queries(index, max(1, int(req.n_queries)))
-    payload = CandidateEvalRequest(index=index, queries=queries,
-                                   k=max(1, int(req.k)),
-                                   metric=req.metric, bins=req.bins)
-    return evaluate_candidate(payload)
-
-# ----------------------------
-# XGBoost Re-ranker: IO helpers
-# ----------------------------
-def _groups_to_dmatrix(groups: List[RerankGroup]) -> Tuple[Any, np.ndarray, List[int]]:
-    """Return DMatrix, labels, group_sizes"""
-    X_list, y_list, group_sizes = [], [], []
-    for g in groups:
-        feats = [c.features for c in g.candidates]
-        X_list.append(np.asarray(feats, dtype=np.float32))
-        lbls = [float(c.label or 0.0) for c in g.candidates]
-        y_list.append(np.asarray(lbls, dtype=np.float32))
-        group_sizes.append(len(g.candidates))
-    X = np.vstack(X_list) if X_list else np.zeros((0, 1), dtype=np.float32)
-    y = np.concatenate(y_list) if y_list else np.zeros((0,), dtype=np.float32)
-    d = xgb.DMatrix(X, label=y)
-    d.set_group(group_sizes)
-    return d, y, group_sizes
-
-def _save_rerank_model(bst: Any, meta: Dict[str, Any], output_tag: Optional[str]) -> str:
-    ts = utc_stamp()
-    out_dir = os.path.join(RERANK_ROOT, f"{ts}{('-' + output_tag) if output_tag else ''}")
-    os.makedirs(out_dir, exist_ok=True)
-    bst.save_model(os.path.join(out_dir, "model.json"))
-    with open(os.path.join(out_dir, "meta.json"), "w") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
-    try:
-        if os.path.islink(RERANK_LATEST) or os.path.exists(RERANK_LATEST): os.unlink(RERANK_LATEST)
-        os.symlink(out_dir, RERANK_LATEST)
-    except OSError:
-        with open(os.path.join(RERANK_ROOT, "LATEST.txt"), "w") as f: f.write(out_dir)
-    return os.path.basename(out_dir)
-
-def _resolve_rerank_dir(model_id: Optional[str]) -> str:
-    if model_id:
-        d = os.path.join(RERANK_ROOT, model_id)
-        if not os.path.isdir(d): raise HTTPException(404, "rerank model not found")
-        return d
-    if os.path.islink(RERANK_LATEST): return os.readlink(RERANK_LATEST)
-    marker = os.path.join(RERANK_ROOT, 'LATEST.txt')
-    if os.path.exists(marker): return open(marker).read().strip()
-    raise HTTPException(404, "no trained rerank model yet")
-
-def _load_rerank_model(model_id: Optional[str]) -> Tuple[Any, Dict, str]:
-    if xgb is None:
-        raise HTTPException(500, "xgboost is not installed. Run: pip install xgboost")
-    model_dir = _resolve_rerank_dir(model_id)
-    bst = xgb.Booster()
-    bst.load_model(os.path.join(model_dir, "model.json"))
-    meta = json.load(open(os.path.join(model_dir, "meta.json")))
-    return bst, meta, os.path.basename(model_dir)
-
-# ----------------------------
-# XGBoost Re-ranker: Endpoints
-# ----------------------------
-@app.post("/rerank/train")
-def rerank_train(req: RerankTrainRequest):
-    if xgb is None:
-        raise HTTPException(500, "xgboost is not installed. Run: pip install xgboost")
-    if not req.train:
-        raise HTTPException(400, "train groups are required")
-
-    dtrain, ytrain, gtrain = _groups_to_dmatrix(req.train)
-    evals = [(dtrain, "train")]
-    params = dict(req.params)
-
-    bst = None
-    evals_result = {}
-    if req.valid:
-        dvalid, yvalid, gvalid = _groups_to_dmatrix(req.valid)
-        evals.append((dvalid, "valid"))
-        bst = xgb.train(
-            params,
-            dtrain,
-            num_boost_round=int(params.get("n_estimators", 500)),
-            evals=evals,
-            early_stopping_rounds=req.early_stopping_rounds,
-            evals_result=evals_result,
-            verbose_eval=False
-        )
-    else:
-        bst = xgb.train(
-            params,
-            dtrain,
-            num_boost_round=int(params.get("n_estimators", 500)),
-            evals=evals,
-            evals_result=evals_result,
-            verbose_eval=False
-        )
-
-    meta = {
-        "created_at": utc_stamp(),
-        "params": params,
-        "train_groups": len(gtrain),
-        "valid_groups": (len(gvalid) if req.valid else 0),
-        "evals_result": evals_result
-    }
-    model_id = _save_rerank_model(bst, meta, req.output_tag)
-    return {"OK": True, "data": {"model_id": model_id, "meta": meta}}
-
-@app.get("/rerank/models")
-def rerank_list_models():
-    out = []
-    if os.path.isdir(RERANK_ROOT):
-        for name in sorted(os.listdir(RERANK_ROOT)):
-            d = os.path.join(RERANK_ROOT, name)
-            if os.path.isdir(d) and os.path.exists(os.path.join(d, "meta.json")):
-                try:
-                    meta = json.load(open(os.path.join(d, "meta.json")))
-                except Exception:
-                    meta = None
-                out.append({"model_id": name, "meta": meta})
-    return {"OK": True, "data": out}
-
-@app.get("/rerank/models/{model_id}")
-def rerank_get_model_meta(model_id: str):
-    d = os.path.join(RERANK_ROOT, model_id)
-    if not os.path.isdir(d):
-        raise HTTPException(404, "rerank model not found")
-    meta = json.load(open(os.path.join(d, "meta.json")))
-    return {"OK": True, "data": meta}
-
-@app.post("/rerank/eval")
-def rerank_eval(req: RerankEvalRequest):
-    if xgb is None:
-        raise HTTPException(500, "xgboost is not installed. Run: pip install xgboost")
-    bst, meta, mid = _load_rerank_model(req.model_id)
-    ndcgs = []
-    precs = []
-    K = int(req.k)
-    for g in req.groups:
-        X = np.asarray([c.features for c in g.candidates], dtype=np.float32)
-        d = xgb.DMatrix(X)
-        scores = bst.predict(d)
-        order = np.argsort(-scores)
-        rels = [float(g.candidates[i].label or 0.0) for i in order]
-        ndcgs.append(_ndcg_at_k(rels, K))
-        k_eff = min(K, len(rels))
-        bin_labels = np.asarray([1.0 if r > 0 else 0.0 for r in rels], dtype=np.float32)
-        precs.append(precision_at_k(bin_labels, k_eff) if k_eff > 0 else 0.0)
-    return {"OK": True, "data": {"model_id": mid, f"ndcg@{K}": float(np.mean(ndcgs)) if ndcgs else 0.0,
-                                  f"precision@{K}": float(np.mean(precs)) if precs else 0.0,
-                                  "groups": len(req.groups)}}
-
-@app.post("/rerank/infer")
-def rerank_infer(req: RerankInferRequest):
-    if xgb is None:
-        raise HTTPException(500, "xgboost is not installed. Run: pip install xgboost")
-    bst, meta, mid = _load_rerank_model(req.model_id)
-    out_groups = []
-    for g in req.groups:
-        X = np.asarray([c.features for c in g.candidates], dtype=np.float32)
-        d = xgb.DMatrix(X)
-        scores = bst.predict(d)
-        order = np.argsort(-scores)
-        items = [{"user_c_id": g.candidates[i].user_c_id,
-                  "score": float(scores[i]),
-                  "label": (float(g.candidates[i].label) if g.candidates[i].label is not None else None)}
-                 for i in order]
-        if req.topk is not None:
-            items = items[: int(req.topk)]
-        out_groups.append({"query_id": g.query_id, "items": items})
-    return {"OK": True, "data": {"model_id": mid, "groups": out_groups}}
-
-# Dev entry
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8091)
-
-
 # ==========================
 # [FRONTEND BRIDGE] 추천 API
 # ==========================
-import os, math
-import requests
-from pydantic import BaseModel
+import os, re, math, logging
+import numpy as np
 from typing import List, Optional, Dict, Tuple
+from pydantic import BaseModel
+from fastapi import HTTPException
 
 # ---- 외부 서비스 엔드포인트 (환경변수로 오버라이드 가능) ----
-ACCEPTOR_URL = os.environ.get("ACCEPTOR_URL", "http://localhost:8093")
-TRAITS_URL   = os.environ.get("TRAITS_URL",   "http://localhost:8092")
+# export ACCEPTOR_URL="http://127.0.0.1:8091/acceptor"
+_DEFAULT_ACCEPTOR = "http://127.0.0.1:8093"
+_DEFAULT_TRAITS   = "http://127.0.0.1:8092"  # 미사용시 무시
+def _normalize_base(url: str) -> str:
+    return (url or "").rstrip("/")
+
+ACCEPTOR_BASE = _normalize_base(os.environ.get("ACCEPTOR_URL", _DEFAULT_ACCEPTOR))
+TRAITS_BASE   = _normalize_base(os.environ.get("TRAITS_URL",   _DEFAULT_TRAITS))
+
+# /score와 /train/inference/sandbox 경로 만들기(중복 방지)
+def _acceptor_score_url() -> str:
+    base = ACCEPTOR_BASE
+    # 이미 .../score로 끝나면 그대로 사용
+    return base if base.endswith("/score") else f"{base}/score"
+
+def _acceptor_sbx_url() -> str:
+    base = ACCEPTOR_BASE
+    # 이미 .../train/inference/sandbox로 끝나면 그대로 사용
+    sbx = "/train/inference/sandbox"
+    return base if base.endswith(sbx) else f"{base}{sbx}"
 
 # ---- 프론트 요청/응답 스키마 ----
 class FrontUser(BaseModel):
@@ -1054,19 +756,23 @@ class FrontProject(BaseModel):
     tech_stack: Optional[str] = None
     recruitment: Optional[int] = None
     description: Optional[str] = None
+    address: Optional[str] = None
+    mbti: Optional[str] = None
+    workStyle: Optional[str] = None
+    workTime: Optional[str] = None
 
 class FrontRecommendRequest(BaseModel):
     users: List[FrontUser]
     project: FrontProject
-    priority1: Optional[str] = None   # "거주지" | "MBTI 비슷한 성향" | "선호 업무 방식" ...
+    priority1: Optional[str] = None
     priority2: Optional[str] = None
     priority3: Optional[str] = None
     top_n: int = 4
 
 class FastApiResultItem(BaseModel):
-    id: int   # userId
-    norm: int # 0~100 정규화 점수 (정수)
-    pob: int  # 0~100 확률(%) 정수
+    id: int
+    norm: int
+    pob: int
 
 class FrontRecommendResponse(BaseModel):
     result: Dict[str, FastApiResultItem]
@@ -1095,173 +801,257 @@ def _make_project_text(p: FrontProject) -> str:
 # ---- 유틸: 코사인 ----
 def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     na = float(np.linalg.norm(a)); nb = float(np.linalg.norm(b))
-    if na <= 0.0 or nb <= 0.0: return 0.0
-    return float((a * b).sum() / (na * nb + 1e-12))
+    if na <= 0.0 or nb <= 0.0:
+        return 0.0
+    v = float((a * b).sum() / (na * nb + 1e-12))
+    if not np.isfinite(v):  # NaN/Inf 방어
+        return 0.0
+    return max(-1.0, min(1.0, v))
 
-# ---- 우선순위 → 보조 가중치 ----
-def _priority_weights(p1: Optional[str], p2: Optional[str], p3: Optional[str]) -> Dict[str, float]:
-    base = {"mbti": 0.0, "workstyle": 0.0, "address": 0.0}
-    order = [p1, p2, p3]
-    for i, key in enumerate(order):
-        if not key: 
-            continue
-        w = 0.06 if i == 0 else (0.04 if i == 1 else 0.02)
-        if "MBTI" in key:
-            base["mbti"] = w
-        elif "업무 방식" in key:
-            base["workstyle"] = w
-        elif "거주지" in key:
-            base["address"] = w
-    return base
+PRIORITY_LABELS = [
+    "거주지","MBTI 비슷한 성향","MBTI 보완적 성향","선호 업무 방식",
+    "선호 시간대","사용 가능 기술 스택","관심 프로젝트 분야","프로젝트 경험 유무",
+]
 
-def _binary_match(a: Optional[str], b: Optional[str]) -> float:
-    if not a or not b: return 0.0
-    return 1.0 if a.strip() == b.strip() else 0.0
+def _priority_weights_from_list(labels_in_order: list[str]) -> dict[str, float]:
+    weights = {lbl: 0.0 for lbl in PRIORITY_LABELS}
+    for i, lbl in enumerate(labels_in_order[:3]):
+        w = 0.5 if i == 0 else (0.3 if i == 1 else 0.2)
+        if lbl in weights:
+            weights[lbl] = w
+    return weights
 
-# ---- traits_fastapi HTTP 호출 ----
+def _priority_weights_from_req(req: FrontRecommendRequest) -> dict[str, float]:
+    labels = [req.priority1, req.priority2, req.priority3]
+    return _priority_weights_from_list([x for x in labels if x])
+
+def _normalize_tokens(s: str) -> set[str]:
+    return set(t.strip().lower() for t in re.split(r"[,\s/]+", s or "") if t.strip())
+
+def _mbti_similar(a: str|None, b: str|None) -> bool:
+    return bool(a and b and len(a)==4 and len(b)==4 and a.upper()==b.upper())
+
+def _mbti_complement(a: str|None, b: str|None) -> bool:
+    if not a or not b or len(a)!=4 or len(b)!=4: return False
+    a, b = a.upper(), b.upper()
+    diff = sum(1 for x, y in zip(a, b) if x != y)
+    return diff >= 3
+
+def _priority_bonus(u: FrontUser, p: FrontProject, W: dict[str,float]) -> float:
+    bonus = 0.0
+    if W["거주지"] > 0 and p and getattr(p, "address", None):
+        bonus += W["거주지"] * (1.0 if (u.address and u.address == p.address) else 0.0)
+    if W["MBTI 비슷한 성향"] > 0:
+        bonus += W["MBTI 비슷한 성향"] * (1.0 if _mbti_similar(u.mbti, getattr(p, "mbti", None)) else 0.0)
+    if W["MBTI 보완적 성향"] > 0:
+        bonus += W["MBTI 보완적 성향"] * (1.0 if _mbti_complement(u.mbti, getattr(p, "mbti", None)) else 0.0)
+    if W["선호 업무 방식"] > 0 and p and getattr(p, "workStyle", None):
+        bonus += W["선호 업무 방식"] * (1.0 if (u.workStyle and u.workStyle == p.workStyle) else 0.0)
+    if W["선호 시간대"] > 0 and p and getattr(p, "workTime", None):
+        bonus += W["선호 시간대"] * (1.0 if (u.workTime and u.workTime == p.workTime) else 0.0)
+    if W["사용 가능 기술 스택"] > 0 and p and p.tech_stack and u.techStack:
+        ut, pt = _normalize_tokens(u.techStack), _normalize_tokens(p.tech_stack)
+        bonus += W["사용 가능 기술 스택"] * (1.0 if ut & pt else 0.0)
+    if W["관심 프로젝트 분야"] > 0 and u.interest:
+        it = _normalize_tokens(u.interest)
+        target = _normalize_tokens(" ".join([
+            getattr(p, "category", "") or "",
+            getattr(p, "type", "") or "",
+            getattr(p, "description", "") or ""
+        ]))
+        bonus += W["관심 프로젝트 분야"] * (1.0 if it & target else 0.0)
+    if W["프로젝트 경험 유무"] > 0:
+        bonus += W["프로젝트 경험 유무"] * (1.0 if bool(u.projectExp) else 0.0)
+    # 수치 안전화
+    if not np.isfinite(bonus): bonus = 0.0
+    return float(max(0.0, min(1.0, bonus)))
+
+# ---- traits_fastapi (옵션) ----
 def _traits_probs(text: str) -> Dict[str, float]:
-    """
-    traits_fastapi의 /score 호출해 {label: prob} 딕셔너리 반환.
-    ENV TRAITS_URL=/score 기준.
-    """
-    url = f"{TRAITS_URL}/score"
+    # 현재 미사용. 필요시 예외 포착 후 빈 딕셔너리 반환
     try:
-        r = requests.post(url, json={"text": text}, timeout=5)
+        import requests
+        url = f"{TRAITS_BASE}/score"
+        r = requests.post(url, json={"text": text}, timeout=3)
         r.raise_for_status()
         js = r.json()
-        # 형태: {'OK': True, 'data': {'model_id': ..., 'labels': [...], 'probs': {'label': prob, ...}}}
-        return js["data"]["probs"]
+        return dict(js.get("data", {}).get("probs", {}))
     except Exception:
-        # traits 모델이 아직 없거나 실패한 경우, 빈 벡터 처리
         return {}
 
-def _align_trait_vecs(a: Dict[str, float], b: Dict[str, float]) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    a, b의 공통 레이블 순서로 벡터화. 공통이 없으면 0-벡터.
-    """
-    if not a or not b:
-        return np.zeros((0,), dtype=np.float32), np.zeros((0,), dtype=np.float32)
-    common = sorted(set(a.keys()) & set(b.keys()))
-    if not common:
-        return np.zeros((0,), dtype=np.float32), np.zeros((0,), dtype=np.float32)
-    va = np.array([float(a[k]) for k in common], dtype=np.float32)
-    vb = np.array([float(b[k]) for k in common], dtype=np.float32)
-    return va, vb
-
-# ---- acceptor_fastapi HTTP 호출 ----
 def _acceptor_probs(items: List[Dict[str, float]]) -> List[float]:
-    """
-    items: [{ "cosine": [0..1], "rank_score": [0..1] }, ...]
-    반환: 확률 리스트 [0..1]
-    """
-    url = f"{ACCEPTOR_URL}/train/inference/sandbox"
+    import requests
+    # score 시도
+    url_score = _acceptor_score_url()
     try:
-        r = requests.post(url, json={"items": items}, timeout=5)
+        r = requests.post(url_score, json={"items": items}, timeout=5)
         r.raise_for_status()
         js = r.json()
-        # 형태: {'OK': True, 'data': [{'prob': float, 'pred': 0/1}, ...], 'threshold': ...}
-        return [float(x.get("prob", 0.0)) for x in js.get("data", [])]
-    except Exception:
-        # 실패 시 안전하게 0.11로 고정되던 문제 방지: 0.0으로
+        probs = [float(x.get("prob", 0.0)) for x in js.get("data", [])]
+        probs = [float(np.clip(p, 0.0, 1.0)) if np.isfinite(p) else 0.0 for p in probs]
+        if probs:
+            return probs
+    except Exception as e:
+        logging.warning(f"[acceptor] score failed {url_score}: {e}")
+
+    # sandbox 폴백
+    url_sbx = _acceptor_sbx_url()
+    try:
+        r = requests.post(url_sbx, json={"items": items}, timeout=5)
+        r.raise_for_status()
+        js = r.json()
+        out = []
+        for x in js.get("data", []):
+            if "prob" in x:
+                p = float(x["prob"])
+            elif "logit" in x:
+                z = float(x["logit"])
+                z = max(min(z, 30.0), -30.0)
+                p = 1.0 / (1.0 + math.exp(-z))
+            else:
+                p = 0.0
+            out.append(float(np.clip(p, 0.0, 1.0)) if np.isfinite(p) else 0.0)
+        return out if out else [0.0 for _ in items]
+    except Exception as e:
+        logging.error(f"[acceptor] sandbox failed {url_sbx}: {e}")
         return [0.0 for _ in items]
+
+def _safe_norm_builder(scores: List[float]):
+    arr = np.array([float(s) if np.isfinite(s) else 0.0 for s in scores], dtype=np.float32)
+    if arr.size == 0:
+        return lambda x: 0
+    rmin, rmax = float(np.min(arr)), float(np.max(arr))
+    if not np.isfinite(rmin): rmin = 0.0
+    if not np.isfinite(rmax): rmax = 0.0
+    if rmax == rmin:
+        return lambda x: 100
+    def _norm(x: float) -> int:
+        if not np.isfinite(x): return 0
+        v = 100.0 * (x - rmin) / (rmax - rmin)
+        if not np.isfinite(v): return 0
+        v = max(0.0, min(100.0, v))
+        return int(round(v))
+    return _norm
 
 @app.post("/frontend/recommend", response_model=FrontRecommendResponse)
 def frontend_recommend(req: FrontRecommendRequest):
-    """
-    파이프라인:
-      1) 텍스트 임베딩 코사인: user_text vs project_text  => text_cos ∈ [-1, 1]
-      2) traits_fastapi: user_text vs project_text 각각 확률벡터 => trait_cos ∈ [0, 1] 근사
-      3) 우선순위(거주지/MBTI/업무방식) 보너스
-      4) rank_score = α*text_cos_unit + β*trait_cos (+ bonus)    (text_cos_unit = (text_cos+1)/2)
-      5) acceptor_fastapi(items=[{cosine: text_cos_unit, rank_score}]) => pob 확률
-      6) rank_score 정규화 0~100 → norm, pob*100 → pob(%)
-      7) pob, norm 기준 내림차순 정렬 후 상위 N 반환
-    """
-    if not req.users:
-        raise HTTPException(400, "users is required and cannot be empty")
+    try:
+        # 입력 검증
+        if not req.users:
+            raise HTTPException(400, "users[] is empty")
+        if req.top_n is None or req.top_n <= 0:
+            req.top_n = 4
 
-    # 1) 텍스트 (임베딩용)
-    p_text = _make_project_text(req.project)
-    user_texts = [_make_user_text(u) for u in req.users]
+        # 우선순위 가중치
+        W = _priority_weights_from_req(req)
 
-    # 1-1) SBERT 임베딩
-    emb_users = encode_texts(user_texts)         # (N, D)
-    emb_proj  = encode_texts([p_text])[0]        # (D,)
+        # 텍스트 → 임베딩
+        p_text = _make_project_text(req.project)
+        user_texts = [_make_user_text(u) for u in req.users]
 
-    # 2) traits 확률 벡터
-    proj_traits = _traits_probs(p_text)          # dict(label->prob)
-    user_traits_list = [_traits_probs(t) for t in user_texts]
+        emb_users = encode_texts(user_texts)   # (N,D)
+        emb_proj  = encode_texts([p_text])[0]  # (D,)
 
-    # 3) 우선순위 보너스
-    pri_w = _priority_weights(req.priority1, req.priority2, req.priority3)
+        def _safe_norm(v): 
+            n = float(np.linalg.norm(v)); 
+            return v / (n + 1e-12)
+        
+        u_proj_cos = []  # traits_* 계산에 함께 사용
+        for u_emb in emb_users:
+            u_proj_cos.append(_cosine(u_emb, emb_proj))
 
-    # 4) 후보별 점수 계산
-    alpha = 0.8  # 텍스트 임베딩 가중
-    beta  = 0.2  # 성향(트레이트) 가중  (원하면 조정)
-    rank_scores = []
-    acceptor_items = []
-    rows_cache = []  # 후반 매핑용
+        # MBTI/traits/카운트 파생 유틸
+        def _mbti_match_cnt(a, b):
+            if not a or not b or len(a) != 4 or len(b) != 4:
+                return 0
+            a, b = a.upper(), b.upper()
+            return sum(1 for x, y in zip(a, b) if x == y)
 
-    for u, u_text, u_emb, u_traits in zip(req.users, user_texts, emb_users, user_traits_list):
-        # 텍스트 코사인: [-1,1] -> [0,1] 매핑
-        text_cos = _cosine(u_emb, emb_proj)
-        text_cos_unit = (text_cos + 1.0) / 2.0
+        def _traits_features(u_vec, p_vec):
+            u = _safe_norm(u_vec); p = _safe_norm(p_vec)
+            cos = float(np.clip((u * p).sum(), -1.0, 1.0))      # -1..1
+            l1  = float(np.mean(np.abs(u - p)))                 # 0..2 (정규화 벡터 기준)
+            l2  = float(np.linalg.norm(u - p))                  # 0..sqrt(2)
+            # 학습 분포에 맞추려면 cos을 [0,1]로 이동
+            cos01 = (cos + 1.0) * 0.5
+            return cos01, l1, l2
+        
+        BONUS_SCALE = 0.4
+        rows = []
+        acc_items = []
 
-        # 성향 코사인 (공통 라벨만)
-        vt_u, vt_p = _align_trait_vecs(u_traits, proj_traits)
-        trait_cos = 0.0 if vt_u.size == 0 else _cosine(vt_u, vt_p)
-        # trait_cos는 [-1,1] 범위지만 확률벡터라 거의 [0,1] 부근 → 안전하게 [0,1] 클램프
-        trait_cos = float(np.clip(trait_cos, 0.0, 1.0))
+        for u, u_emb in zip(req.users, emb_users):
+            base_cos = _cosine(u_emb, emb_proj)               # [-1, 1]
+            cos_01   = (base_cos + 1.0) * 0.5                 # [0, 1]
+            # 감마 보정: 중간값(0.5~0.7)을 살짝 끌어올림 (모노토닉 유지)
+            cos_01_lift = cos_01 ** 0.6                       # 0.6~0.7대 → 체감 상승
 
-        # 우선순위 보너스(가벼운 가점) – 프로젝트에 기준값이 없으므로 "존재" 보너스 위주
-        bonus = 0.0
-        if pri_w["mbti"] > 0 and u.mbti:
-            bonus += pri_w["mbti"] * 0.5
-        if pri_w["workstyle"] > 0 and u.workStyle:
-            bonus += pri_w["workstyle"] * 0.5
-        if pri_w["address"] > 0 and u.address:
-            bonus += pri_w["address"] * 0.5
+            bonus    = _priority_bonus(u, req.project, W)     # [0..1]
+            # 보너스는 가운데로 쉬프트해서 너무 0/1 극단으로 안가게
+            bonus_mid = 0.5 + 0.5 * bonus                     # [0.5..1.0]
 
-        # 간단한 문자열 매칭 보너스(있다면 약간 더)
-        # 예: 프로젝트 설명에 '원격/출근' 키워드가 있으면 반영하고 싶다면 여기에 확장 가능
-        # (현재는 존재 가점만 적용)
+            # rank 스코어도 lift된 코사인 기반으로
+            rscore   = float((cos_01_lift * 2.0 - 1.0) + BONUS_SCALE * (bonus))  # back to [-1..1] 근방
+            cos_sim_for_acceptor = cos_01 * 2.0 - 1.0
+            tcos, tl1, tl2 = _traits_features(u_emb, emb_proj)
+            # --- 추가: MBTI 파생 ---
+            mm_cnt = _mbti_match_cnt(u.mbti, getattr(req.project, "mbti", None))
+            ge3    = 1 if mm_cnt >= 3 else 0
 
-        # 최종 rank_score (0~1 권장)
-        rank_score_unit = float(np.clip(alpha * text_cos_unit + beta * trait_cos + bonus, 0.0, 1.0))
-        rank_scores.append(rank_score_unit)
+            # --- 추가: 최근 활동 priors ---
+            offers_30 = 2
+            accepts_30 = 1
+            # acceptor 입력용 랭크는 보수적으로 합성 (모델 민감도 고려)
+            acc_rank = 0.5 * cos_01_lift + 0.5 * bonus_mid
+            acc_rank = float(np.clip(acc_rank, 0.0, 1.0))
+            # 활동/수락률 기본값
+            act  = 0.85 if (u.projectExp or u.coverLetter or u.techStack) else 0.60
+            arat = 0.75 if u.projectExp else 0.55
 
-        acceptor_items.append({
-            "cosine": float(np.clip(text_cos_unit, 0.0, 1.0)),
-            "rank_score": float(np.clip(rank_score_unit, 0.0, 1.0)),
-            # 필요하면 추가 피처 키를 acceptor에 맞춰 더 보낼 수 있음
-        })
-        rows_cache.append({"userId": int(u.userId)})
+            acc_items.append({
+                "rank_score":   acc_rank,
+                "matcher_prob": cos_01_lift,
+                "cosine":       cos_01_lift,     # 혹시 'cos_sim'이 아닌 'cosine'로 학습된 경우 대비
+                "user_activity_90d":       act,
+                "user_accept_rate_global": arat,
+                "traits_cosine": tcos,
+                "traits_l1":     tl1,
+                "traits_l2":     tl2,
+                "mbti_match_cnt": mm_cnt,
+                "mbti_ge3":       ge3,
+                "offers_last_30d":  offers_30,
+                "accepts_last_30d": accepts_30,
+            })
+            rows.append({"userId": u.userId, "rank_score": rscore})
+        # 수락확률 요청 (예외/오류 → 0.0)
+        probs = _acceptor_probs(acc_items)
+        if len(probs) != len(rows):
+            # 길이 불일치시 안전 보정
+            probs = (probs + [0.0] * len(rows))[:len(rows)]
 
-    # 5) acceptor_fastapi 호출 → 확률
-    probs = _acceptor_probs(acceptor_items)  # [0..1]
+        # 정규화
+        _norm = _safe_norm_builder([r["rank_score"] for r in rows])
 
-    # 6) rank_score → 0..100 정규화
-    rs = np.asarray(rank_scores, dtype=np.float32)
-    rs_min, rs_max = float(rs.min()), float(rs.max())
-    if abs(rs_max - rs_min) < 1e-12:
-        norms = np.full_like(rs, 100.0)
-    else:
-        norms = (rs - rs_min) / (rs_max - rs_min) * 100.0
+        scored = []
+        for r, p in zip(rows, probs):
+            p = float(np.clip(p, 0.0, 1.0))  # [0..1]
+            # 확률 0.00~1.00 → 1~99%로 클램프 (보기 좋게)
+            p_disp = p ** 0.6
+            pcts  = max(1, min(99, int(round(100.0 * p_disp))))
+            pob = max(1, min(99, int(round(100.0 * p_disp))))
+            scored.append({"id": int(r["userId"]), "norm": _norm(r["rank_score"]), "pob": pob})
 
-    # 7) 정렬 및 top-N 선택: pob 우선, 동률이면 norm
-    rows = []
-    for item, n, p in zip(rows_cache, norms.tolist(), probs):
-        rows.append({
-            "userId": item["userId"],
-            "norm": int(round(n)),
-            "pob":  int(round(float(np.clip(p, 0.0, 1.0)) * 100.0)),
-        })
-    rows.sort(key=lambda x: (x["pob"], x["norm"]), reverse=True)
-    top = rows[: max(1, req.top_n)]
+        # norm → pob 순으로 소트 후 top_n
+        scored.sort(key=lambda x: (x["norm"], x["pob"]), reverse=True)
+        top = scored[: int(req.top_n or 4)]
 
-    # 8) {"1": {...}, "2": {...}, ...} 형태로 반환
-    out: Dict[str, FastApiResultItem] = {}
-    for rank, item in enumerate(top, start=1):
-        out[str(rank)] = FastApiResultItem(id=item["userId"], norm=item["norm"], pob=item["pob"])
+        # 응답 구성 (키는 "1","2",...)
+        out = {str(i+1): FastApiResultItem(**it) for i, it in enumerate(top)}
+        return {"result": out}
 
-    return FrontRecommendResponse(result=out)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.exception("[frontend/recommend] unexpected error")
+        # JSON으로 에러 반환해도 FastAPI가 500을 유지하게 하려면 HTTPException 사용
+        raise HTTPException(status_code=500, detail=f"frontend_recommend failed: {type(e).__name__}: {e}")
