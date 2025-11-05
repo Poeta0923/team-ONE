@@ -23,7 +23,7 @@ const resume = require('../lib/resume');
 // =================================================================
 
 // [1] [GET] /api/resume 경로 정의
-router.get('/', verifyToken, (req, res)=>{
+router.get('/:userId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`GET /api/resume - User: ${req.user ? req.user.userId : 'N/A'}`);
 
