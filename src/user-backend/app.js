@@ -39,12 +39,14 @@ const rootRouter = require('./router/rootRouter');
 const authRouter = require('./router/authRouter');
 const projectRouter = require('./router/projectRouter');
 const myPageRouter = require('./router/myPageRouter');
+const resumeRouter = require('./router/resumeRouter');
 
 // 라우터 연결
 app.use('/api', rootRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/project', projectRouter);
 app.use('/api/myPage', myPageRouter);
+app.use('/api/resume', resumeRouter);
 
 // =================================================================
 // 4. Server Initialization
