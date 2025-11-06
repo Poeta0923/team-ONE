@@ -3,9 +3,9 @@
 // =================================================================
 
 // 데이터베이스 연결 모듈 로드 (db.js에서 완성된 연결 풀 객체를 가져옴)
-const db = require('../util/db');
+const db = require('./util/db');
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('../util/logger');
+const logger = require('./util/logger');
 // Node.js의 util 모듈 로드 (Promisify 사용을 위해)
 const util = require('util');
 
