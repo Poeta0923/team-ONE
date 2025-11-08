@@ -3,8 +3,8 @@ package com.teammatching.admin.content.service;
 import com.teammatching.admin.content.domain.Contest;
 import com.teammatching.admin.content.domain.Project;
 import com.teammatching.admin.content.dto.*;
-import com.teammatching.admin.content.repository.ContestRepository;
-import com.teammatching.admin.content.repository.ProjectRepository;
+import com.teammatching.admin.content.repository.*;
+import com.teammatching.admin.user.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +19,10 @@ public class ContentAdminService {
 
     private final ProjectRepository projectRepository;
     private final ContestRepository contestRepository;
+    private final MemberRepository memberRepository;
+    private final LikeRepository likeRepository;
+    private final RecommandRepository recommandRepository;
+
     /**
      * 전체 프로젝트 목록을 페이징하여 조회
      * @param statement 필터링할 상태 (null이면 전체 조회)
@@ -82,7 +86,6 @@ public class ContentAdminService {
         memberRepository.deleteAllByProjectProjectId(projectId);
         likeRepository.deleteAllByProjectProjectId(projectId);
         recommandRepository.deleteAllByProjectProjectId(projectId);
-        reportRepository.deleteAllByProjectProjectId(projectId); // 🚨 ReportRepository 사용
 
         // 3. 모든 '자식'이 삭제된 것을 확인 후, '부모'인 프로젝트를 최종 삭제
         projectRepository.delete(project);
