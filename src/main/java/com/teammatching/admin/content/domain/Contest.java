@@ -20,4 +20,10 @@ public class Contest {
     @Column(nullable = false)
     private String name;
 
+    public static Contest of(String name) {
+        Contest contest = new Contest();
+        contest.setName(name);
+        return contest;
+    }
+
 }
