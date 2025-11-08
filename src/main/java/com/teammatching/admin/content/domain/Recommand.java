@@ -27,8 +27,7 @@ public class Recommand {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member") // ERD의 'member' 컬럼을 'user'로 가정하고 수정
-    @JoinColumn(name = "member", referencedColumnName = "userId") // 'member' 컬럼이 'users.userId'를 참조
+    @JoinColumn(name = "member", referencedColumnName = "userId")
     private User user;
 
     @Column(nullable = false)
