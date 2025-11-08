@@ -2,10 +2,7 @@ package com.teammatching.admin.content.domain;
 
 import com.teammatching.admin.user.domain.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -34,6 +31,9 @@ public class Recommand {
     private int score;
 
     // 복합 키를 위한 ID 클래스
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class RecommandId implements Serializable {
         private Integer recommandId;
         private Integer project;

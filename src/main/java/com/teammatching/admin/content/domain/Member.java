@@ -2,10 +2,7 @@ package com.teammatching.admin.content.domain;
 
 import com.teammatching.admin.user.domain.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "members")
 @Entity
+@IdClass(Member.MemberId.class)
 public class Member {
 
     @Id
@@ -35,7 +33,9 @@ public class Member {
     @Column(nullable = false)
     private LocalDateTime date;
 
-    // 복합 키를 위한 ID 클래스
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class MemberId implements Serializable {
         private Integer project;
         private Integer user;
