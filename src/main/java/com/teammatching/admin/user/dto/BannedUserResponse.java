@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 public record BannedUserResponse(
+
+        Integer userId,
+
         @Schema(description = "사용자 이름", example = "김철수")
         String name,
 
@@ -25,8 +28,11 @@ public record BannedUserResponse(
      */
     public static BannedUserResponse from(UserStatus userStatus) {
         return new BannedUserResponse(
+                userStatus.getUser().getUserId(),
                 userStatus.getUser().getName(),     // 연결된 User에서 이름 가져오기
                 userStatus.getUser().getNickName(), // 연결된 User에서 닉네임 가져오기
+
+
                 userStatus.getStatus(),
                 userStatus.getReason(),
                 userStatus.getUpdatedAt()

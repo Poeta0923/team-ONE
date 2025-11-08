@@ -14,6 +14,9 @@ public record ReportListResponse(
         @Schema(description = "신고된 사용자 이름", example = "김철수")
         String reportedName,
 
+        //신고된 사용자의 고유 ID
+        Integer reportedUserId,
+
         @Schema(description = "신고 사유", example = "프로젝트 잠수")
         String reason,
 
@@ -32,6 +35,9 @@ public record ReportListResponse(
                 report.getReportId(),
                 report.getReporter().getName(), // 신고한 사람의 이름
                 report.getReported().getName(), // 신고된 사람의 이름
+
+                report.getReported().getUserId(),
+
                 report.getReason(),
                 report.getCreatedAt(),
                 report.getStatus()
