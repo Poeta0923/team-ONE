@@ -51,4 +51,20 @@ public class ContentAdminController {
         ContestListResponse createdContest = contentAdminService.createContest(request);
         return ApiResponse.success("공모전이 성공적으로 등록되었습니다.", createdContest);
     }
+
+    @DeleteMapping("/projects/{projectId}")
+    public ApiResponse<Void> deleteProject(
+            @PathVariable Integer projectId
+    ) {
+        contentAdminService.deleteProject(projectId);
+        return ApiResponse.success("해당 프로젝트가 성공적으로 삭제되었습니다.", null);
+    }
+
+    @DeleteMapping("/contests/{contestId}")
+    public ApiResponse<Void> deleteContest(
+            @PathVariable Integer contestId
+    ) {
+        contentAdminService.deleteContest(contestId);
+        return ApiResponse.success("해당 공모전이 성공적으로 삭제되었습니다.", null);
+    }
 }

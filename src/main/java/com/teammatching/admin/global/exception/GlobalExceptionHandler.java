@@ -9,32 +9,45 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 @RestControllerAdvice //모든 Controller에서 발생하는 예외 처리
 public class GlobalExceptionHandler {
     
-    //AuthService(관리자 인증)에서 발생한 예외 처리
+    // 로그인 실패 핸들러 - 아이디, 비밀번호 불일치
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
 
         // 에러 코드와 에러 메시지 생성
-        ApiResponse<Void> errorResponse = ApiResponse.error(401, ex.getMessage());
-
+        ApiResponse<Void> error = ApiResponse.error(401, ex.getMessage());
         // json 에러 응답 반환
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
+    // 로그인 실패 핸들러 - 관리자 권한 X
+    @ExceptionHandler(NoAdminAuthorityException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoAdminAuthorityException(NoAdminAuthorityException ex) {
 
-    // @Valid 어노테이션을 통한 유효성 검사 실패 시 발생하는 예외를 처리
+        ApiResponse<Void> error = ApiResponse.error(401, ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    // @Valid 실패 핸들러
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
 
-        // 3. 예외 객체에서 우리가 DTO에 정의했던 에러 메시지를 꺼냄
         String errorMessage = ex.getBindingResult()
                 .getAllErrors()
-                .get(0) // 첫 번째 에러 메시지를 가져옴
+                .get(0)
                 .getDefaultMessage();
 
-        // 4. 우리가 정한 600번 오류 코드와 함께 ApiResponse를 생성합니다.
         ApiResponse<Void> errorResponse = ApiResponse.error(600, errorMessage);
 
-        // 5. 400 Bad Request 상태와 함께 에러 응답을 반환합니다.
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 삭제 실패 핸들러
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
+
+        String errorMessage = ex.getMessage();
+        ApiResponse<Void> error = ApiResponse.error(409, errorMessage);
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 }

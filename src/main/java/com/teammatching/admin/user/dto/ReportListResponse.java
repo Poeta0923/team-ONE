@@ -14,9 +14,10 @@ public record ReportListResponse(
         @Schema(description = "신고된 사용자 이름", example = "김철수")
         String reportedName,
 
-        //신고된 사용자의 고유 ID
+        // 신고된 사용자의 고유 ID
         Integer reportedUserId,
-
+        // 신고된 사용자의 계정 차단 여부
+        String reportedUserStatus,
         @Schema(description = "신고 사유", example = "프로젝트 잠수")
         String reason,
 
@@ -28,16 +29,15 @@ public record ReportListResponse(
 ) {
     /**
      * Report 엔티티를 ReportListResponse DTO로 변환하는 정적 팩토리 메소드
-     * (핵심!) JPA JOIN을 통해 연결된 User 객체에서 이름을 가져옵니다.
      */
-    public static ReportListResponse from(Report report) {
+    public static ReportListResponse from(Report report, String reportedUserStatus) {
         return new ReportListResponse(
+
                 report.getReportId(),
                 report.getReporter().getName(), // 신고한 사람의 이름
                 report.getReported().getName(), // 신고된 사람의 이름
-
                 report.getReported().getUserId(),
-
+                reportedUserStatus,
                 report.getReason(),
                 report.getCreatedAt(),
                 report.getStatus()

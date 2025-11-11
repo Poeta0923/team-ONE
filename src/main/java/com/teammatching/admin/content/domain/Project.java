@@ -2,9 +2,9 @@ package com.teammatching.admin.content.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
-
+import java.util.ArrayList;
+import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -51,4 +51,12 @@ public class Project {
     @Column(nullable = false)
     private LocalDateTime date;
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Member> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Like> likes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Recommand> recommands = new ArrayList<>();
 }

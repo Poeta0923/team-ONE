@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @RequiredArgsConstructor
 @Transactional
 @Service
@@ -57,47 +61,64 @@ public class UserAdminService {
             reports = reportRepository.findAll(pageable);
         }
 
-        // Page<Report>를 Page<ReportListResponse>로 변환
-        Page<ReportListResponse> reportResponses = reports.map(ReportListResponse::from);
+        List<Integer> reportedUserIds = reports.getContent().stream()
+                .map(report -> report.getReported().getUserId())
+                .distinct()
+                .toList(); // (Java 17+에서 사용 가능)
 
+        // 3. 추출된 userId 목록으로 'userStatus' 테이블을 '한 번만' 조회
+        Map<Integer, String> statusMap = userStatusRepository.findByUser_UserIdIn(reportedUserIds).stream()
+                .collect(Collectors.toMap(
+                        userStatus -> userStatus.getUser().getUserId(), // Key: userId
+                        UserStatus::getStatus                           // Value: status
+                ));
+
+        Page<ReportListResponse> reportResponses = reports.map(report -> {
+                    Integer reportedUserId = report.getReported().getUserId();
+                    // 맵(statusMap)에 상태 정보가 있으면 그 값을 쓰고, 없으면 'active' (정상)로 간주
+                    String reportedStatus = statusMap.getOrDefault(reportedUserId, "active");
+
+                    // DTO의 from 메소드에 'report'와 'reportedStatus' 2개를 전달
+                    return ReportListResponse.from(report, reportedStatus);
+                });
         // 최종 포장지 DTO로 변환하여 반환
         return ReportPagingResponse.from(reportResponses);
     }
 
     /**
-     * 차단('banned')된 회원 목록을 페이징하여 조회합니다.
+     * 차단('banned')된 회원 목록을 페이징하여 조회
      * @param pageable 페이징 정보
      * @return 페이징된 차단 회원 목록 (DTO)
      */
     @Transactional(readOnly = true)
     public BannedUserPagingResponse getBannedUsers(Pageable pageable) {
-        // DB에서 status가 'banned'인 목록을 Page 객체로 가져옵니다.
+
         Page<UserStatus> bannedStatuses = userStatusRepository.findByStatus("banned", pageable);
 
-        // Page<UserStatus>를 Page<BannedUserResponse>로 변환합니다. (JOIN 발생)
+        // Page<UserStatus>를 Page<BannedUserResponse>로 변환
         Page<BannedUserResponse> bannedUserResponses = bannedStatuses.map(BannedUserResponse::from);
 
-        // BannedUserPagingResponse DTO로 최종 변환하여 반환합니다.
+        // BannedUserPagingResponse DTO로 최종 변환하여 반환
         return BannedUserPagingResponse.from(bannedUserResponses);
     }
 
     /**
-     * 특정 회원의 계정 상태를 변경(블랙리스트 등록/해제).
+     * 특정 회원의 계정 상태를 변경(블랙리스트 등록/해제)
      * @param userId  대상 회원 ID
      * @param request 변경할 상태와 사유
      * @return 변경된 상태 정보 DTO
      */
     public StatusUpdateResponse updateUserStatus(Integer userId, StatusUpdateRequest request) {
-        // 1. 요청받은 status가 'active' 또는 'banned'인지 확인
+        // 요청받은 status가 'active' 또는 'banned'인지 확인
         if (!request.status().equals("active") && !request.status().equals("banned")) {
             throw new IllegalArgumentException("잘못된 상태 값입니다: " + request.status());
         }
 
-        // 2. 대상 회원이 DB에 존재하는지 확인
+        // 대상 회원이 DB에 존재하는지 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 회원을 찾을 수 없습니다. userId: " + userId));
 
-        // 3. 이미 UserStatus에 정보가 있는지 확인
+        // 이미 UserStatus에 정보가 있는지 확인
         UserStatus userStatus = userStatusRepository.findByUser_UserId(userId)
                 .orElse(null); // 없으면 null
 

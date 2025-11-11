@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 @Service
 public class ContentAdminService {
 
@@ -29,6 +29,7 @@ public class ContentAdminService {
      * @param pageable 페이징 정보
      * @return 페이징된 프로젝트 목록 (DTO)
      */
+    @Transactional(readOnly = true)
     public ProjectPagingResponse getProjects(String statement, Pageable pageable) {
         Page<Project> projects;
 
@@ -49,18 +50,16 @@ public class ContentAdminService {
     }
 
     /**
-     * 전체 공모전 목록을 페이징하여 조회합니다.
+     * 전체 공모전 목록을 페이징하여 조회
      * @param pageable 페이징 정보
      * @return 페이징된 공모전 목록 (DTO)
      */
+    @Transactional(readOnly = true)
     public ContestPagingResponse getContests(Pageable pageable) {
-        // 1. DB에서 Contest 목록을 Page 객체로 가져옵니다.
+
         Page<Contest> contests = contestRepository.findAll(pageable);
-
-        // 2. Page<Contest>를 Page<ContestListResponse>로 변환합니다.
+        // Page<Contest>를 Page<ContestListResponse>로 변환
         Page<ContestListResponse> contestResponses = contests.map(ContestListResponse::from);
-
-        // 3. 최종 포장지 DTO로 변환하여 반환합니다.
         return ContestPagingResponse.from(contestResponses);
     }
 
@@ -78,16 +77,33 @@ public class ContentAdminService {
      * @param projectId 삭제할 프로젝트 ID
      */
     public void deleteProject(Integer projectId) {
-        // 프로젝트가 여부 확인
+        // 프로젝트 존재 여부 확인
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다. ID: " + projectId));
 
-        // 관련된 '자식' 데이터를 모두 삭제 (순서는 상관없음)
-        memberRepository.deleteAllByProjectProjectId(projectId);
         likeRepository.deleteAllByProjectProjectId(projectId);
         recommandRepository.deleteAllByProjectProjectId(projectId);
+        memberRepository.deleteAllByProjectProjectId(projectId);
 
-        // 3. 모든 '자식'이 삭제된 것을 확인 후, '부모'인 프로젝트를 최종 삭제
+        projectRepository.flush();
+        // 프로젝트 삭제
         projectRepository.delete(project);
+    }
+
+    /**
+     * 특정 공모전을 삭제
+     * @param contestId 삭제할 프로젝트 ID
+     */
+    public void deleteContest(Integer contestId) {
+        // 프로젝트가 해당 공모전을 사용하는지 확인
+        if(projectRepository.existsByContest_ContestId(contestId)) {
+            throw new IllegalStateException("해당 공모전을 사용중인 프로젝트가 있어 삭제할 수 없습니다.");
+        }
+        // 공모전 여부 확인
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공모전입니다. ID : " + contestId));
+
+        // 공모전 내용 삭제
+        contestRepository.delete(contest);
     }
 }
