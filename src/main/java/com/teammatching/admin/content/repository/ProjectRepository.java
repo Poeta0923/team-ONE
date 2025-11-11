@@ -5,8 +5,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface ProjectRepository extends JpaRepository<Project,Integer> {
 
     // 'statement' (진행중, 완료 등)를 기준으로 페이징하여 찾는 메소드
     Page<Project> findByStatement(String statement, Pageable pageable);
+
+    boolean existsByContest_ContestId(Integer contestId);
+    List<Project> findTop3ByOrderByDateDesc();
 }

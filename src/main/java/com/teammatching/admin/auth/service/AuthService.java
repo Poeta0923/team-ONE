@@ -2,6 +2,7 @@ package com.teammatching.admin.auth.service;
 
 import com.teammatching.admin.auth.dto.LoginRequest;
 import com.teammatching.admin.auth.dto.TokenResponse;
+import com.teammatching.admin.global.exception.NoAdminAuthorityException;
 import com.teammatching.admin.global.jwt.TokenProvider;
 import com.teammatching.admin.user.domain.Role;
 import com.teammatching.admin.user.domain.User;
@@ -29,7 +30,7 @@ public class AuthService {
 
         // 3. 관리자(ADMIN) 권한이 있는지 확인
         if (admin.getRole() != Role.ADMIN) {
-            throw new IllegalArgumentException("관리자 권한이 없습니다.");
+            throw new NoAdminAuthorityException("관리자 권한이 없습니다.");
         }
 
         // 4. 모든 검증 통과 시, 토큰을 생성한다.

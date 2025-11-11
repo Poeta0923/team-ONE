@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "like")
+@Table(name = "`like`")
 @Entity
 public class Like {
 
@@ -30,4 +30,5 @@ public class Like {
 
     @Column(nullable = false)
     private LocalDateTime date;
+
 }
