@@ -13,6 +13,8 @@ const bodyParser = require('body-parser');
 const logger = require('./lib/util/logger'); 
 // Express 애플리케이션 인스턴스 생성
 const app = express();
+// Express WebSocket 통합 모듈 로드 및 적용
+const expressWs = require('express-ws')(app);
 
 // =================================================================
 // 2. Global Middleware Configuration
@@ -20,7 +22,7 @@ const app = express();
 
 // [1] 요청 본문(body) 파싱 설정
 // JSON 형식의 요청 본문 파싱 추가 (대부분의 API 요청에서 사용)
-app.use(bodyParser.json()); // ⬅️ 이 코드를 추가해야 합니다!
+app.use(bodyParser.json()); 
 
 // application/x-www-form-urlencoded 형식의 데이터 파싱 (HTML Form POST 요청)
 // extended: false는 Node.js 기본 라이브러리 사용을 의미
