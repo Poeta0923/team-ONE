@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/AdminLayout';
-import { fetchUserReportDetail, banUser, unbanUser } from '../../../utils/api';
+import { fetchUserReportDetail, banUser, unbanUser, updateReportStatus } from '../../../utils/api';
 import './ReportDetailPage.css';
 
 const ReportDetailPage = () => {
@@ -50,13 +50,13 @@ const ReportDetailPage = () => {
     try {
       const result = await banUser(userId, blockReason);
       
-      if (result.success) {
-        alert(result.message || '회원이 차단되었습니다.');
+      if (result.resultCode === 200) {
+        alert(result.successMessage || '회원이 차단되었습니다.');
         setUserInfo({ ...userInfo, status: 'banned' });
         setShowBlockInput(false);
         setBlockReason('');
       } else {
-        alert(result.message || '회원 차단에 실패했습니다.');
+        alert(result.successMessage || '회원 차단에 실패했습니다.');
       }
     } catch (error) {
       console.error('회원 차단 실패:', error);
@@ -72,15 +72,34 @@ const ReportDetailPage = () => {
     try {
       const result = await unbanUser(userId);
       
-      if (result.success) {
-        alert(result.message || '차단이 해제되었습니다.');
+      if (result.resultCode === 200) {
+        alert(result.successMessage || '차단이 해제되었습니다.');
         setUserInfo({ ...userInfo, status: 'active' });
       } else {
-        alert(result.message || '차단 해제에 실패했습니다.');
+        alert(result.successMessage || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
       console.error('차단 해제 실패:', error);
       alert('차단 해제에 실패했습니다.');
+    }
+  };
+
+  const handleReportStatusChange = async (reportId, newStatus) => {
+    try {
+      const result = await updateReportStatus(reportId, newStatus);
+      
+      if (result.resultCode === 200) {
+        alert(result.successMessage || '신고 상태가 변경되었습니다.');
+        // 신고 목록 업데이트
+        setReports(reports.map(report => 
+          report.id === reportId ? { ...report, status: newStatus } : report
+        ));
+      } else {
+        alert(result.successMessage || '신고 상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('신고 상태 변경 실패:', error);
+      alert('신고 상태 변경에 실패했습니다.');
     }
   };
 
@@ -163,6 +182,35 @@ const ReportDetailPage = () => {
                       <span className="report-label">상세 내용:</span>
                       <span className="report-value report-description">{report.description}</span>
                     </div>
+                  )}
+                  <div className="report-row">
+                    <span className="report-label">신고 일시:</span>
+                    <span className="report-value">{formatDateTime(report.createdAt)}</span>
+                  </div>
+                  <div className="report-row">
+                    <span className="report-label">처리 상태:</span>
+                    <span className="report-value">
+                      <span className={`report-status-badge ${report.status === 'resolved' ? 'status-resolved' : 'status-pending'}`}>
+                        {report.status === 'resolved' ? '처리완료' : '대기중'}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <div className="report-actions">
+                  {report.status === 'pending' ? (
+                    <button 
+                      className="resolve-report-button" 
+                      onClick={() => handleReportStatusChange(report.id, 'resolved')}
+                    >
+                      처리 완료로 변경
+                    </button>
+                  ) : (
+                    <button 
+                      className="reopen-report-button" 
+                      onClick={() => handleReportStatusChange(report.id, 'pending')}
+                    >
+                      대기중으로 변경
+                    </button>
                   )}
                 </div>
               </div>

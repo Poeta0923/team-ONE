@@ -2,17 +2,10 @@
 // MOCK 모드 설정 (테스트용)
 // ============================================
 // true로 설정하면 실제 API 대신 Mock 데이터를 사용합니다
-export const USE_MOCK_API = true; // <- 여기를 false로 바꾸면 실제 API 사용
+export const USE_MOCK_API = true;
 
 // API 기본 설정
-// 환경별 자동 전환
 const getApiBaseUrl = () => {
-  // 개발 환경 (npm run dev)
-  if (import.meta.env.DEV) {
-    return 'http://ceprj.gachon.ac.kr:60002';
-  }
-  
-  // 프로덕션 환경 (npm run build)
   return 'http://ceprj.gachon.ac.kr:60002';
 };
 
@@ -27,14 +20,21 @@ export const API_ENDPOINTS = {
   PROJECTS_LIST: `${API_BASE_URL}/admin/projects`,
   PROJECT_DELETE: (projectId) => `${API_BASE_URL}/admin/projects/${projectId}`,
   
+  // 공모전 관리
+  CONTESTS_LIST: `${API_BASE_URL}/admin/contests`,
+  CONTEST_CREATE: `${API_BASE_URL}/admin/contests`,
+  CONTEST_DELETE: (contestId) => `${API_BASE_URL}/admin/contests/${contestId}`,
+  
   // 회원 관리
   USERS_ALL: `${API_BASE_URL}/admin/users`,
   REPORTS: `${API_BASE_URL}/admin/reports`,
   USERS_BANNED: `${API_BASE_URL}/admin/banned-users`,
   USER_REPORT_DETAIL: (userId) => `${API_BASE_URL}/admin/users/${userId}/reports`,
-  USER_REPORT_STATUS: (reportId) => `${API_BASE_URL}/admin/reports/${reportId}/status`,
-  USER_BAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/ban`,
-  USER_UNBAN: (userId) => `${API_BASE_URL}/admin/users/${userId}/unban`,
+  USER_STATUS: (userId) => `${API_BASE_URL}/admin/users/${userId}/status`,
+  REPORT_STATUS: (reportId) => `${API_BASE_URL}/admin/reports/${reportId}/status`,
+  
+  // 대시보드
+  DASHBOARD: `${API_BASE_URL}/admin/dashboard`,
 };
 
 // 로컬 스토리지에서 토큰 가져오기
@@ -199,6 +199,8 @@ const mockData = {
           reportId: 1,
           reporterName: "김유저",
           reportedName: "이유저",
+          reportedUserId: 2,
+          reportedUserStatus: "banned",
           reason: "프로젝트 잠수 (연락 두절)",
           createdAt: "2025-10-01T10:30:00",
           status: "pending"
@@ -207,6 +209,8 @@ const mockData = {
           reportId: 2,
           reporterName: "박유저",
           reportedName: "최유저",
+          reportedUserId: 4,
+          reportedUserStatus: "banned",
           reason: "팀 채팅방에서 지속적인 비매너 행위 및 욕설",
           createdAt: "2025-10-02T11:00:00",
           status: "pending"
@@ -215,6 +219,8 @@ const mockData = {
           reportId: 3,
           reporterName: "정유저",
           reportedName: "한유저",
+          reportedUserId: 6,
+          reportedUserStatus: "banned",
           reason: "프로젝트와 관련 없는 홍보성 스팸 링크 게시",
           createdAt: "2025-10-02T15:10:00",
           status: "pending"
@@ -223,6 +229,8 @@ const mockData = {
           reportId: 4,
           reporterName: "김유저",
           reportedName: "최유저",
+          reportedUserId: 4,
+          reportedUserStatus: "banned",
           reason: "두 번째 신고: 욕설 및 비방 행위가 개선되지 않음",
           createdAt: "2025-10-03T09:20:00",
           status: "pending"
@@ -231,6 +239,8 @@ const mockData = {
           reportId: 5,
           reporterName: "송유저",
           reportedName: "김유저",
+          reportedUserId: 1,
+          reportedUserStatus: "active",
           reason: "프로젝트 참여 없음 (무임승차)",
           createdAt: "2025-09-15T14:00:00",
           status: "pending"
@@ -239,6 +249,8 @@ const mockData = {
           reportId: 6,
           reporterName: "남유저",
           reportedName: "배유저",
+          reportedUserId: 10,
+          reportedUserStatus: "active",
           reason: "과제 기한 미준수 및 팀원 비협조",
           createdAt: "2025-09-20T18:00:00",
           status: "pending"
@@ -247,6 +259,8 @@ const mockData = {
           reportId: 7,
           reporterName: "박유저",
           reportedName: "김유저",
+          reportedUserId: 1,
+          reportedUserStatus: "active",
           reason: "사전 통보 없이 팀원을 강퇴 처리함",
           createdAt: "2025-10-04T12:45:00",
           status: "pending"
@@ -255,6 +269,8 @@ const mockData = {
           reportId: 8,
           reporterName: "이유저",
           reportedName: "박유저",
+          reportedUserId: 3,
+          reportedUserStatus: "active",
           reason: "아이디어 도용 의심 (기획안 무단 사용)",
           createdAt: "2025-10-05T10:00:00",
           status: "pending"
@@ -263,6 +279,8 @@ const mockData = {
           reportId: 9,
           reporterName: "최유저",
           reportedName: "정유저",
+          reportedUserId: 5,
+          reportedUserStatus: "active",
           reason: "팀 미팅에 지속적으로 불참 (3회 이상)",
           createdAt: "2025-09-25T17:30:00",
           status: "pending"
@@ -271,6 +289,8 @@ const mockData = {
           reportId: 10,
           reporterName: "한유저",
           reportedName: "송유저",
+          reportedUserId: 7,
+          reportedUserStatus: "active",
           reason: "프로젝트 잠수",
           createdAt: "2025-10-06T08:00:00",
           status: "pending"
@@ -289,6 +309,7 @@ const mockData = {
     data: {
       users: [
         {
+          userId: 2,
           name: "이유저",
           nickName: "유저이",
           status: "banned",
@@ -296,6 +317,7 @@ const mockData = {
           updatedAt: "2025-10-03T11:00:00"
         },
         {
+          userId: 4,
           name: "최유저",
           nickName: "유저사",
           status: "banned",
@@ -303,6 +325,7 @@ const mockData = {
           updatedAt: "2025-10-04T10:00:00"
         },
         {
+          userId: 6,
           name: "한유저",
           nickName: "유저육",
           status: "banned",
@@ -533,42 +556,168 @@ const mockData = {
 
   // 프로젝트 목록
   projects: {
-    success: true,
-    data: [
-      { 
-        projectId: 1, 
-        name: '웹 포트폴리오 사이트', 
-        type: '웹개발', 
-        category: 'IT', 
-        statement: '진행중', 
-        date: '2024-09-30T14:00:00Z' 
-      },
-      { 
-        projectId: 2, 
-        name: '모바일 앱 개발', 
-        type: '앱개발', 
-        category: 'IT', 
-        statement: '완료', 
-        date: '2024-09-29T10:20:00Z' 
-      },
-      { 
-        projectId: 3, 
-        name: 'AI 챗봇 서비스', 
-        type: '웹개발', 
-        category: 'IT', 
-        statement: '진행중', 
-        date: '2024-09-28T15:30:00Z' 
-      },
-      { 
-        projectId: 4, 
-        name: '이커머스 플랫폼', 
-        type: '웹개발', 
-        category: '비즈니스', 
-        statement: '진행중', 
-        date: '2024-09-27T11:00:00Z' 
-      },
-    ],
-    total: 4
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "프로젝트 목록 조회 성공",
+    data: {
+      projects: [
+        {
+          projectId: 23,
+          name: "AI 기반 교내 주차 관리 시스템",
+          type: "AI/ML",
+          category: "교통/IT",
+          statement: "진행중",
+          date: "2025-10-01T10:00:00"
+        },
+        {
+          projectId: 24,
+          name: "반려동물 산책 및 커뮤니티 앱",
+          type: "App",
+          category: "라이프스타일",
+          statement: "모집중",
+          date: "2025-10-02T11:30:00"
+        },
+        {
+          projectId: 25,
+          name: "학과 강의실 예약 시스템",
+          type: "Web",
+          category: "교내/편의",
+          statement: "진행중",
+          date: "2025-10-03T14:20:00"
+        },
+        {
+          projectId: 26,
+          name: "가천대 맛집 추천 및 리뷰 사이트",
+          type: "Web",
+          category: "라이프스타일",
+          statement: "완료",
+          date: "2025-09-01T18:00:00"
+        },
+        {
+          projectId: 27,
+          name: "전기차 충전소 최적 경로 탐색 알고리즘",
+          type: "AI/ML",
+          category: "교통/IT",
+          statement: "진행중",
+          date: "2025-10-05T16:00:00"
+        },
+        {
+          projectId: 28,
+          name: "소상공인을 위한 상권 분석 대시보드",
+          type: "Data",
+          category: "비즈니스",
+          statement: "모집중",
+          date: "2025-10-10T09:00:00"
+        },
+        {
+          projectId: 29,
+          name: "졸업작품: AI 기반 팀 매칭 시스템",
+          type: "Web",
+          category: "IT/교육",
+          statement: "진행중",
+          date: "2025-10-11T11:00:00"
+        },
+        {
+          projectId: 30,
+          name: "시각 장애인을 위한 스마트 지팡이",
+          type: "IoT",
+          category: "복지/기술",
+          statement: "완료",
+          date: "2025-09-15T17:30:00"
+        },
+        {
+          projectId: 31,
+          name: "교내 중고거래 마켓 앱 (가천마켓)",
+          type: "App",
+          category: "교내/편의",
+          statement: "모집중",
+          date: "2025-10-15T13:00:00"
+        },
+        {
+          projectId: 32,
+          name: "학과 공지사항 챗봇 서비스",
+          type: "AI/ML",
+          category: "교내/편의",
+          statement: "진행중",
+          date: "2025-10-18T10:00:00"
+        }
+      ],
+      totalPages: 2,
+      totalElements: 11
+    }
+  },
+
+  // 공모전 목록
+  contests: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "공모전 목록 조회 성공",
+    data: {
+      contests: [
+        {
+          contestId: 1,
+          name: "2025 AI 기반 스마트시티 공모전"
+        },
+        {
+          contestId: 2,
+          name: "2025 대학생 앱 개발 챌린지 (APP-JAM)"
+        },
+        {
+          contestId: 3,
+          name: "빅데이터 활용 비즈니스 아이디어 경진대회"
+        },
+        {
+          contestId: 4,
+          name: "가천대학교 졸업작품 경진대회"
+        }
+      ],
+      totalPages: 1,
+      totalElements: 4
+    }
+  },
+
+  // 대시보드
+  dashboard: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "대시보드 조회 성공",
+    data: {
+      monthlyUserGrowth: [
+        { month: 1, totalUserCount: 1, projectParticipantCount: 0 },
+        { month: 2, totalUserCount: 2, projectParticipantCount: 0 },
+        { month: 3, totalUserCount: 2, projectParticipantCount: 0 },
+        { month: 4, totalUserCount: 2, projectParticipantCount: 0 },
+        { month: 5, totalUserCount: 6, projectParticipantCount: 0 },
+        { month: 6, totalUserCount: 6, projectParticipantCount: 0 },
+        { month: 7, totalUserCount: 6, projectParticipantCount: 0 },
+        { month: 8, totalUserCount: 6, projectParticipantCount: 0 },
+        { month: 9, totalUserCount: 6, projectParticipantCount: 0 },
+        { month: 10, totalUserCount: 8, projectParticipantCount: 0 },
+        { month: 11, totalUserCount: 9, projectParticipantCount: 1 },
+        { month: 12, totalUserCount: 9, projectParticipantCount: 1 }
+      ],
+      annualUserGrowth: [
+        { year: 2025, totalUserCount: 9 },
+        { year: 2024, totalUserCount: 2 }
+      ],
+      recentProjects: [
+        { projectId: 32, name: "학과 공지사항 챗봇 서비스", statement: "진행중" },
+        { projectId: 29, name: "졸업작품: AI 기반 팀 매칭 시스템", statement: "진행중" },
+        { projectId: 33, name: "친환경 캠페인 인증 웹사이트", statement: "완료" }
+      ],
+      recentUsers: [
+        { userId: 11, name: "배유저", date: "2025-11-11T14:00:00" },
+        { userId: 12, name: "박유저", date: "2025-10-20T15:00:00" },
+        { userId: 10, name: "남유저", date: "2025-10-08T13:00:00" },
+        { userId: 9, name: "김유저", date: "2025-05-17T12:00:00" },
+        { userId: 8, name: "송유저", date: "2025-05-16T11:00:00" },
+        { userId: 7, name: "한유저", date: "2025-05-15T10:00:00" },
+        { userId: 6, name: "정유저", date: "2025-05-01T10:00:00" },
+        { userId: 3, name: "이유저", date: "2025-02-20T14:00:00" },
+        { userId: 2, name: "김유저", date: "2025-01-10T09:30:00" },
+        { userId: 5, name: "최유저", date: "2024-04-18T17:00:00" }
+      ]
+    }
   }
 };
 
@@ -701,31 +850,53 @@ export const fetchUserReportDetail = async (userId) => {
   return response.json();
 };
 
-// 회원 차단
+// 회원 차단 (블랙리스트 등록)
 export const banUser = async (userId, reason) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return { success: true, message: '사용자가 차단되었습니다.' };
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "계정 상태가 성공적으로 변경되었습니다.",
+      data: {
+        userId: userId,
+        status: "banned",
+        updateAt: new Date().toISOString()
+      }
+    };
   }
   
-  const response = await fetch(API_ENDPOINTS.USER_BAN(userId), {
-    method: 'POST',
+  const response = await fetch(API_ENDPOINTS.USER_STATUS(userId), {
+    method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ reason })
+    body: JSON.stringify({ 
+      status: "banned",
+      reason: reason 
+    })
   });
   return response.json();
 };
 
-// 회원 차단 해제
+// 회원 차단 해제 (블랙리스트 해제)
 export const unbanUser = async (userId) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return { success: true, message: '사용자 차단이 해제되었습니다.' };
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "계정 상태가 성공적으로 변경되었습니다.",
+      data: {
+        userId: userId,
+        status: "active",
+        updateAt: new Date().toISOString()
+      }
+    };
   }
   
-  const response = await fetch(API_ENDPOINTS.USER_UNBAN(userId), {
-    method: 'POST',
-    headers: getAuthHeaders()
+  const response = await fetch(API_ENDPOINTS.USER_STATUS(userId), {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status: "active" })
   });
   return response.json();
 };
@@ -734,13 +905,21 @@ export const unbanUser = async (userId) => {
 export const updateReportStatus = async (reportId, status) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return { success: true, message: '신고 상태가 업데이트되었습니다.' };
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "신고 상태가 성공적으로 변경됐습니다.",
+      data: {
+        reportId: reportId,
+        status: status
+      }
+    };
   }
   
-  const response = await fetch(API_ENDPOINTS.USER_REPORT_STATUS(reportId), {
-    method: 'PATCH',
+  const response = await fetch(API_ENDPOINTS.REPORT_STATUS(reportId), {
+    method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status: status })
   });
   return response.json();
 };
@@ -762,11 +941,84 @@ export const fetchProjects = async (page = 1, limit = 10) => {
 export const deleteProject = async (projectId) => {
   if (USE_MOCK_API) {
     await mockDelay();
-    return { success: true, message: '프로젝트가 삭제되었습니다.' };
+    return { 
+      contentType: "json",
+      resultCode: 200,
+      successMessage: '프로젝트가 삭제되었습니다.',
+      data: null
+    };
   }
   
   const response = await fetch(API_ENDPOINTS.PROJECT_DELETE(projectId), {
     method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// 공모전 목록 조회
+export const fetchContests = async (page = 1, limit = 10) => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.contests;
+  }
+  
+  const response = await fetch(`${API_ENDPOINTS.CONTESTS_LIST}?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// 공모전 등록
+export const createContest = async (name) => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "공모전이 성공적으로 등록되었습니다.",
+      data: {
+        contestId: Math.floor(Math.random() * 1000) + 100,
+        name: name
+      }
+    };
+  }
+  
+  const response = await fetch(API_ENDPOINTS.CONTEST_CREATE, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name })
+  });
+  return response.json();
+};
+
+// 공모전 삭제
+export const deleteContest = async (contestId) => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return { 
+      contentType: "json",
+      resultCode: 200,
+      successMessage: '공모전이 삭제되었습니다.',
+      data: null
+    };
+  }
+  
+  const response = await fetch(API_ENDPOINTS.CONTEST_DELETE(contestId), {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// 대시보드 조회
+export const fetchDashboard = async () => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.dashboard;
+  }
+  
+  const response = await fetch(API_ENDPOINTS.DASHBOARD, {
     headers: getAuthHeaders()
   });
   return response.json();

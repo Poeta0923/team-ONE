@@ -1,143 +1,257 @@
-.contests-content {
+.contests-page {
   padding: 20px;
 }
 
-.content-header {
+.contests-content {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.contests-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
-.content-header h2 {
-  color: #333;
-  font-size: 24px;
+.contests-header h2 {
+  color: #2c3e50;
+  font-size: 1.5rem;
   margin: 0;
 }
 
-.contests-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
+.create-contest-button {
+  padding: 10px 20px;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.contest-card {
+.create-contest-button:hover {
+  background: #e55a2b;
+  transform: translateY(-1px);
+}
+
+.contests-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.contests-table thead {
+  background: #f8f9fa;
+}
+
+.contests-table th {
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #dee2e6;
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+/* 공모전 테이블 컬럼 너비 */
+.contests-table th:nth-child(1) { width: 12%; }  /* 번호 */
+.contests-table th:nth-child(2) { width: 68%; }  /* 공모전 이름 */
+.contests-table th:nth-child(3) { width: 10%; }  /* 관리 */
+
+.contests-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  color: #495057;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contests-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.delete-button {
+  padding: 6px 14px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.delete-button:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  transition: transform 0.3s ease;
+  padding: 32px;
+  min-width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.contest-card:hover {
-  transform: translateY(-2px);
+.modal-content h3 {
+  margin: 0 0 24px 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
 }
 
-.contest-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.contest-header h3 {
-  color: #333;
-  font-size: 18px;
-  margin: 0;
-}
-
-.contest-status {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.contest-status.ongoing {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.contest-status.upcoming {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.contest-status.completed {
-  background-color: #cce5ff;
-  color: #004085;
-}
-
-.contest-description {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 15px;
-}
-
-.contest-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #666;
-}
-
-.contest-date,
-.contest-participants {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.contest-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-small {
-  padding: 8px 16px;
-  font-size: 14px;
+.contest-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dee2e6;
   border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.contest-input:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-confirm,
+.btn-cancel {
+  padding: 10px 24px;
   border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.btn-outline {
-  background-color: transparent;
-  color: #ff6b35;
-  border: 1px solid #ff6b35;
-}
-
-.btn-outline:hover {
-  background-color: #ff6b35;
+.btn-confirm {
+  background: #ff6b35;
   color: white;
 }
 
-.btn-primary {
-  background-color: #ff6b35;
+.btn-confirm:hover {
+  background: #e55a2b;
+}
+
+.btn-cancel {
+  background: #6c757d;
   color: white;
 }
 
-.btn-primary:hover {
-  background-color: #e55a2b;
+.btn-cancel:hover {
+  background: #5a6268;
 }
 
 @media (max-width: 768px) {
-  .contests-grid {
-    grid-template-columns: 1fr;
+  .contests-page {
+    padding: 12px;
   }
   
-  .content-header {
+  .contests-content {
+    padding: 12px;
+  }
+  
+  .contests-header {
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
     align-items: stretch;
   }
   
-  .contest-header {
+  .contests-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .create-contest-button {
+    width: 100%;
+  }
+  
+  .contests-table th,
+  .contests-table td {
+    padding: 10px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .contests-table th:nth-child(1) { width: 15%; }
+  .contests-table th:nth-child(2) { width: 65%; }
+  .contests-table th:nth-child(3) { width: 15%; }
+  
+  .delete-button {
+    font-size: 0.8rem;
+    padding: 5px 8px;
+  }
+  
+  .modal-content {
+    min-width: auto;
+    width: 90%;
+    padding: 24px;
+  }
+  
+  .modal-buttons {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  }
+  
+  .btn-confirm,
+  .btn-cancel {
+    width: 100%;
   }
 }

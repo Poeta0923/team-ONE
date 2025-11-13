@@ -94,7 +94,6 @@ const LoginPage = () => {
         </form>
 
         <div className="login-footer">
-          <p>테스트 계정: admin / 1234</p>
           <a href="/" className="back-link">← 홈으로 돌아가기</a>
         </div>
       </div>

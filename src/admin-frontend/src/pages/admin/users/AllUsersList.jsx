@@ -17,7 +17,8 @@ const AllUsersList = () => {
     setLoading(true);
     
     try {
-      const result = await fetchAllUsers(page, 10);
+      // 전체 회원 API도 0-based 페이징 사용
+      const result = await fetchAllUsers(page - 1, 10);
       
       if (result.resultCode === 200) {
         setUsers(result.data.users);

@@ -1,127 +1,178 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AdminLayout from '../../../components/AdminLayout';
+import { fetchDashboard } from '../../../utils/api';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
-  //API 연동 시 삭제될 임시 데이터
-  const tempData = {
-    monthlyUsers: {
-      current: 1234,
-      previous: 1100,
-      change: 12.2
-    },
-    recentProjects: [
-      { id: 1, name: '웹 포트폴리오 사이트', creator: '김개발', date: '2024-03-15', status: '진행중' },
-      { id: 2, name: '모바일 앱 개발', creator: '이백엔드', date: '2024-03-14', status: '완료' },
-      { id: 3, name: 'AI 챗봇 서비스', creator: '박디자인', date: '2024-03-13', status: '기획중' },
-      { id: 4, name: '데이터 분석 도구', creator: '최프론트', date: '2024-03-12', status: '진행중' },
-      { id: 5, name: '클라우드 마이그레이션', creator: '정데브옵스', date: '2024-03-11', status: '완료' }
-    ],
-    recentUsers: [
-      { id: 1, name: '홍길동', role: '백엔드 개발자', joinDate: '2024-03-15' },
-      { id: 2, name: '김철수', role: '프론트엔드 개발자', joinDate: '2024-03-14' },
-      { id: 3, name: '이영희', role: 'UI/UX 디자이너', joinDate: '2024-03-13' },
-      { id: 4, name: '박민수', role: '데이터 분석가', joinDate: '2024-03-12' },
-      { id: 5, name: '최지영', role: 'DevOps 엔지니어', joinDate: '2024-03-11' },
-      { id: 6, name: '정수현', role: 'AI 개발자', joinDate: '2024-03-10' },
-      { id: 7, name: '한지민', role: '프론트엔드 개발자', joinDate: '2024-03-09' },
-      { id: 8, name: '윤성호', role: '백엔드 개발자', joinDate: '2024-03-08' }
-    ],
-    yearlyUsers: {
-      data: [
-        { month: '1월', users: 800 },
-        { month: '2월', users: 950 },
-        { month: '3월', users: 1100 },
-        { month: '4월', users: 1200 },
-        { month: '5월', users: 1300 },
-        { month: '6월', users: 1400 },
-        { month: '7월', users: 1350 },
-        { month: '8월', users: 1450 },
-        { month: '9월', users: 1500 },
-        { month: '10월', users: 1600 },
-        { month: '11월', users: 1700 },
-        { month: '12월', users: 1800 }
-      ]
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchDashboard();
+      
+      if (response.resultCode === 200) {
+        setDashboardData(response.data);
+      } else {
+        setError(response.successMessage || '대시보드 데이터를 불러오는데 실패했습니다.');
+      }
+    } catch (err) {
+      setError('대시보드 데이터를 불러오는 중 오류가 발생했습니다.');
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderDashboard = () => (
-    <div className="dashboard-content">
-      <div className="dashboard-section">
-        <div className="section-header">
-          <h3>월간 이용자 증감</h3>
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const renderDashboard = () => {
+    if (loading) {
+      return (
+        <div className="dashboard-content">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>대시보드 데이터를 불러오는 중...</p>
+          </div>
         </div>
-        <div className="chart-container">
-          <div className="chart-placeholder">
-            <p>월간 이용자 증감 차트 (Chart.js/Recharts 사용 예정)</p>
-            <div className="temp-chart">
-              <div className="chart-bar" style={{height: '60%'}}></div>
-              <div className="chart-bar" style={{height: '80%'}}></div>
-              <div className="chart-bar" style={{height: '100%'}}></div>
-              <div className="chart-bar" style={{height: '70%'}}></div>
-              <div className="chart-bar" style={{height: '90%'}}></div>
-            </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="dashboard-content">
+          <div className="error-container">
+            <p>{error}</p>
+            <button onClick={loadDashboardData} className="retry-button">다시 시도</button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!dashboardData) {
+      return (
+        <div className="dashboard-content">
+          <div className="empty-container">
+            <p>대시보드 데이터가 없습니다.</p>
+          </div>
+        </div>
+      );
+    }
+
+    // 월별 데이터 변환 (월 이름 추가)
+    const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const monthlyData = dashboardData.monthlyUserGrowth.map(item => ({
+      ...item,
+      monthName: monthNames[item.month - 1],
+      전체회원: item.totalUserCount,
+      프로젝트참여자: item.projectParticipantCount
+    }));
+
+    // 연간 데이터 변환
+    const annualData = dashboardData.annualUserGrowth.map(item => ({
+      ...item,
+      yearName: `${item.year}년`,
+      전체회원: item.totalUserCount
+    }));
+
+    return (
+      <div className="dashboard-content">
+        {/* 월간 이용자 증감 */}
+        <div className="dashboard-section">
+          <div className="section-header">
+            <h3>월간 이용자 증감</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="monthName" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="전체회원" stroke="#ff6b35" strokeWidth={2} />
+                <Line type="monotone" dataKey="프로젝트참여자" stroke="#f7931e" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 최근 생성된 프로젝트 */}
+        <div className="dashboard-section">
+          <div className="section-header">
+            <h3>최근 생성된 프로젝트</h3>
+            <a href="/admin/projects" className="view-all-link">전체보기</a>
+          </div>
+          <div className="list-container">
+            {dashboardData.recentProjects.map(project => (
+              <div key={project.projectId} className="list-item">
+                <div className="item-info">
+                  <h4>{project.name}</h4>
+                  <p>프로젝트 ID: {project.projectId}</p>
+                </div>
+                <span className={`status-badge ${project.statement === '진행중' ? 'active' : project.statement === '완료' ? 'completed' : 'planning'}`}>
+                  {project.statement}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 최근 가입한 회원 */}
+        <div className="dashboard-section">
+          <div className="section-header">
+            <h3>최근 가입한 회원</h3>
+            <a href="/admin/users" className="view-all-link">전체보기</a>
+          </div>
+          <div className="user-cards-container">
+            {dashboardData.recentUsers.slice(0, 6).map(user => (
+              <div key={user.userId} className="user-card">
+                <div className="user-avatar">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="user-info">
+                  <h4 className="user-name">{user.name}</h4>
+                  <p className="user-date">{formatDate(user.date)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 연간 이용자 증감 */}
+        <div className="dashboard-section">
+          <div className="section-header">
+            <h3>연간 이용자 증감</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={annualData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="yearName" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="전체회원" fill="#ff6b35" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
-
-      <div className="dashboard-section">
-        <div className="section-header">
-          <h3>최근 생성된 프로젝트</h3>
-          <a href="/admin/projects" className="view-all-link">전체보기</a>
-        </div>
-        <div className="list-container">
-          {tempData.recentProjects.slice(0, 4).map(project => (
-            <div key={project.id} className="list-item">
-              <div className="item-info">
-                <h4>{project.name}</h4>
-                <p>생성자: {project.creator} | {project.date}</p>
-              </div>
-              <span className={`status-badge ${project.status === '진행중' ? 'active' : project.status === '완료' ? 'completed' : 'planning'}`}>
-                {project.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="dashboard-section">
-        <div className="section-header">
-          <h3>최근 가입한 회원</h3>
-          <a href="/admin/users" className="view-all-link">전체보기</a>
-        </div>
-        <div className="user-cards-container">
-          {tempData.recentUsers.slice(0, 4).map(user => (
-            <div key={user.id} className="user-card">
-              <div className="user-avatar">
-                {user.name.charAt(0)}
-              </div>
-              <div className="user-info">
-                <h4 className="user-name">{user.name}</h4>
-                <p className="user-role">{user.role}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="dashboard-section">
-        <div className="section-header">
-          <h3>연간 이용자 증감</h3>
-        </div>
-        <div className="chart-container">
-          <div className="chart-placeholder">
-            <p>연간 이용자 증감 차트 (Chart.js/Recharts 사용 예정)</p>
-            <div className="temp-chart">
-              {tempData.yearlyUsers.data.map((item, index) => (
-                <div key={index} className="chart-bar" style={{height: `${(item.users / 2000) * 100}%`}}></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <AdminLayout>

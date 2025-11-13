@@ -19,14 +19,15 @@ const ProjectsPage = () => {
     setLoading(true);
     
     try {
-      const result = await fetchProjects(page, 10);
+      // 백엔드는 페이지를 0부터 시작하므로 -1
+      const result = await fetchProjects(page - 1, 10);
       
-      if (result.success) {
-        setProjects(result.data);
-        setTotalElements(result.total);
-        setTotalPages(Math.ceil(result.total / 10));
+      if (result.resultCode === 200) {
+        setProjects(result.data.projects);
+        setTotalElements(result.data.totalElements);
+        setTotalPages(result.data.totalPages);
       } else {
-        console.error('프로젝트 목록 조회 실패');
+        console.error('프로젝트 목록 조회 실패:', result.successMessage);
       }
     } catch (error) {
       console.error('프로젝트 목록 조회 실패:', error);
@@ -43,11 +44,11 @@ const ProjectsPage = () => {
     try {
       const result = await deleteProject(projectId);
       
-      if (result.success) {
-        alert(result.message || '프로젝트가 삭제되었습니다.');
+      if (result.resultCode === 200) {
+        alert(result.successMessage || '프로젝트가 삭제되었습니다.');
         loadProjects(currentPage); // 목록 새로고침
       } else {
-        alert(result.message || '프로젝트 삭제에 실패했습니다.');
+        alert(result.successMessage || '프로젝트 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('프로젝트 삭제 실패:', error);
@@ -59,6 +60,7 @@ const ProjectsPage = () => {
     switch (status) {
       case '진행중': return 'status-active';
       case '완료': return 'status-completed';
+      case '모집중': return 'status-recruiting';
       case '대기': return 'status-pending';
       default: return '';
     }
@@ -91,6 +93,10 @@ const ProjectsPage = () => {
     <AdminLayout>
       <div className="projects-page">
         <div className="projects-content">
+          <div className="projects-header">
+            <h2>프로젝트 관리</h2>
+          </div>
+
           <table className="projects-table">
             <thead>
               <tr>
