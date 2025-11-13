@@ -944,7 +944,7 @@ export const deleteProject = async (projectId) => {
     return { 
       contentType: "json",
       resultCode: 200,
-      successMessage: '프로젝트가 삭제되었습니다.',
+      successMessage: '해당 프로젝트가 성공적으로 삭제되었습니다.',
       data: null
     };
   }
@@ -999,7 +999,7 @@ export const deleteContest = async (contestId) => {
     return { 
       contentType: "json",
       resultCode: 200,
-      successMessage: '공모전이 삭제되었습니다.',
+      successMessage: '해당 공모전이 성공적으로 삭제되었습니다.',
       data: null
     };
   }

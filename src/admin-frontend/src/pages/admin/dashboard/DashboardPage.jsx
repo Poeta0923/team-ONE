@@ -81,12 +81,14 @@ const DashboardPage = () => {
       프로젝트참여자: item.projectParticipantCount
     }));
 
-    // 연간 데이터 변환
-    const annualData = dashboardData.annualUserGrowth.map(item => ({
-      ...item,
-      yearName: `${item.year}년`,
-      전체회원: item.totalUserCount
-    }));
+    // 연간 데이터 변환 (연도 오름차순 정렬)
+    const annualData = dashboardData.annualUserGrowth
+      .map(item => ({
+        ...item,
+        yearName: `${item.year}년`,
+        전체회원: item.totalUserCount
+      }))
+      .sort((a, b) => a.year - b.year);
 
     return (
       <div className="dashboard-content">

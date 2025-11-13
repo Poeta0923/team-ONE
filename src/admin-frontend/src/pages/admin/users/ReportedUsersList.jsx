@@ -27,7 +27,6 @@ const ReportedUsersList = () => {
     setLoading(true);
     
     try {
-      // 신고받은 회원 API도 0-based 페이징 사용
       const result = await fetchReports(page - 1, 10);
       
       console.log('신고받은 회원 응답:', result);
@@ -55,10 +54,6 @@ const ReportedUsersList = () => {
     setBlockReason('');
     setLoadingDetails(true);
     
-    // 회원 상태 확인
-    // 방법 1: report에 reportedUserStatus가 있으면 사용 (백엔드 수정 후)
-    // 방법 2: 블랙리스트 API에서 확인 (현재 가능!)
-    // 방법 3: 없으면 기본값 'active' 사용 (최후)
     
     if (report.reportedUserStatus) {
       // 백엔드가 reportedUserStatus 추가한 경우

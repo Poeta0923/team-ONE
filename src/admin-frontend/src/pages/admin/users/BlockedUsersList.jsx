@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchBannedUsers, unbanUser, fetchUserReportDetail } from '../../../utils/api';
+import { fetchBannedUsers, unbanUser, fetchReports } from '../../../utils/api';
 import Pagination from './Pagination';
 
 const BlockedUsersList = () => {
@@ -47,29 +47,31 @@ const BlockedUsersList = () => {
     setShowModal(true);
     setLoadingDetails(true);
     
-    // 사용자 신고 내역 로드 (userId 사용)
+    // 사용자 신고 내역 로드
+    // GET /admin/reports에서 해당 userId의 신고만 필터링
     try {
-      const result = await fetchUserReportDetail(user.userId);
-      console.log('차단된 회원 신고 내역:', result);
+      console.log('🔍 차단된 회원의 신고 내역 조회:', user.userId, user.name);
       
-      // 백엔드 응답 성공
+      // 전체 신고 목록을 가져와서 필터링 (큰 limit으로)
+      const result = await fetchReports(0, 1000); // 페이지 0, 큰 limit
+      console.log('📋 전체 신고 목록 조회 결과:', result);
+      
       if (result.resultCode === 200 && result.data && result.data.reports) {
-        setUserReports(result.data.reports);
-      } 
-      // MOCK API 응답
-      else if (result.success && result.data && result.data.reports) {
-        setUserReports(result.data.reports);
-      } 
-      // API 없음 (404) - 신고 내역 없음으로 처리
-      else if (result.status === 404) {
-        console.warn('⚠️ 신고 내역 API 없음 (404)');
-        setUserReports([]);
+        // reportedUserId 또는 reportedName으로 필터링
+        const userReports = result.data.reports.filter(report => 
+          report.reportedUserId === user.userId || 
+          report.reportedName === user.name ||
+          report.reportedName === user.nickName
+        );
+        
+        console.log(`✅ ${user.name} 회원의 신고 내역 ${userReports.length}건 발견`);
+        setUserReports(userReports);
       } else {
-        console.warn('신고 내역 조회 실패');
+        console.warn('⚠️ 신고 목록 조회 실패');
         setUserReports([]);
       }
     } catch (error) {
-      console.error('신고 내역 로드 실패:', error);
+      console.error('❌ 신고 내역 로드 실패:', error);
       setUserReports([]);
     } finally {
       setLoadingDetails(false);
