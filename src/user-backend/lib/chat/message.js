@@ -3,7 +3,7 @@
 // =================================================================
 
 const logger = require('../util/logger');
-const db = require('../../db'); 
+const db = require('../util/db'); 
 const sanitize = require('../util/sanitize');
 const util = require('util'); 
 
