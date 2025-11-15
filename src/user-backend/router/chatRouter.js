@@ -39,15 +39,7 @@ router.post('/private', verifyToken, (req, res)=>{
     private.private(req, res);
 })
 
-// [2] [WS] /api/chat/message 경로 정의 (WebSocket 핸들러)
-// **TypeError: router.ws is not a function 오류를 해결하기 위해 app.js로 이동되었습니다.**
-/*
-router.ws('/message', verifyToken, (ws, req)=>{
-    // ... 제거된 WebSocket 핸들러 ...
-})
-*/
-
-// [3] [GET] /api/chat/list 경로 정의 (채팅 목록 조회)
+// [2] [GET] /api/chat/list 경로 정의 (채팅 목록 조회)
 router.get('/list', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
     logger.info(`GET /api/chat/list - User: ${req.user ? req.user.userId : 'N/A'}`);
@@ -55,6 +47,14 @@ router.get('/list', verifyToken, (req, res)=>{
     // list.list 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     list.list(req, res);
 })
+
+// [3] [GET] /api/chat/room/:roomId 경로 정의
+router.get('/room/:roomId', verifyToken, (req, res) => {
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`GET /api/chat/room/${req.params.roomId} - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    room.getMessages(req, res);
+});
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
 module.exports = router;
