@@ -27,7 +27,10 @@ const list = require ('../lib/chat/list');
 const room = require('../lib/chat/room');
 
 // [4] 메뉴 필요 정보 반환 모듈 호출
-const menu = require('../lib/chat/menu')
+const menu = require('../lib/chat/menu');
+
+// [5] 프로젝트 초대 수락 모듈 호출
+const accept = require('../lib/chat/accept');
 
 // =================================================================
 // 3. API Route Endpoints Definition
@@ -62,10 +65,17 @@ router.get('/room/:roomId', verifyToken, (req, res) => {
 // [4] [GET] /api/chat/menu/:roomId 경로 정의
 router.get('/menu/:roomId', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    // URL 파라미터를 로그에 포함하도록 수정
     logger.info(`GET /api/chat/menu/${req.params.roomId} - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     menu.menu(req, res);
+})
+
+// [5] [POST] /api/chat/accept 경로 정의
+router.post('/accept', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`GET /api/chat/accept - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    accept.accept(req, res);
 })
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
