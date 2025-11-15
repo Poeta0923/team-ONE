@@ -24,16 +24,6 @@ const util = require('util');
  * @param {Array} values SQL 쿼리에 바인딩할 값들의 배열
  * @returns {Promise<object>} 쿼리 결과를 resolve하는 프로미스
  */
-const connectionQueryPromise = (connection, sql, values) => {
-    return new Promise((resolve, reject) => {
-        connection.query(sql, values, (error, result) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(result);
-        });
-    });
-};
 
 // =================================================================
 // 3. Feature Implement (모듈 내보내기)

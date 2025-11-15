@@ -6,18 +6,6 @@ const db = require('../util/db');
 const logger = require('../util/logger');
 const util = require('util');
 
-// DB 쿼리용 헬퍼 함수 (기존 프로젝트 형식 유지)
-const connectionQueryPromise = (connection, sql, values) => {
-    return new Promise((resolve, reject) => {
-        connection.query(sql, values, (error, result) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(result);
-        });
-    });
-};
-
 // =================================================================
 // 2. DB Query Definition
 // =================================================================

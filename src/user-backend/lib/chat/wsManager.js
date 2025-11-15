@@ -17,18 +17,6 @@ const connectedClients = {};
 // 채팅방 참여자 ID 조회 쿼리 (모든 브로드캐스트에 필요)
 const sqlGetParticipants = `SELECT userId FROM participant WHERE roomId = ?`;
 
-// DB 쿼리용 헬퍼 함수
-const connectionQueryPromise = (connection, sql, values) => {
-    return new Promise((resolve, reject) => {
-        connection.query(sql, values, (error, result) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(result);
-        });
-    });
-};
-
 // =================================================================
 // 3. Manager Functions
 // =================================================================

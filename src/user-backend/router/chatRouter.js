@@ -73,7 +73,7 @@ router.get('/menu/:roomId', verifyToken, (req, res)=>{
 // [5] [POST] /api/chat/accept 경로 정의
 router.post('/accept', verifyToken, (req, res)=>{
     // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`GET /api/chat/accept - User: ${req.user ? req.user.userId : 'N/A'}`);
+    logger.info(`POST /api/chat/accept - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     accept.accept(req, res);
 })

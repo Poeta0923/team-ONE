@@ -7,18 +7,6 @@ const logger = require('../util/logger');
 const util = require('util');
 const wsManager = require('./wsManager'); // ⭐ wsManager 로드 (필수)
 
-// DB 쿼리용 헬퍼 함수
-const connectionQueryPromise = (connection, sql, values) => {
-    return new Promise((resolve, reject) => {
-        connection.query(sql, values, (error, result) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(result);
-        });
-    });
-};
-
 // =================================================================
 // 2. DB Query Definition
 // =================================================================
