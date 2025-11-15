@@ -6,9 +6,10 @@ const logger = require('../util/logger');
 const db = require('../util/db'); 
 const sanitize = require('../util/sanitize');
 const util = require('util'); 
+const wsManager = require('./wsManager'); // ⭐ wsManager 로드
 
 // =================================================================
-// 2. Utility Functions (트랜잭션 처리를 위해 재정의 - 기존 코드와 동일)
+// 2. Utility Functions
 // =================================================================
 
 /**
@@ -26,21 +27,14 @@ const connectionQueryPromise = (connection, sql, values) => {
 };
 
 // =================================================================
-// 3. Global State Management (연결된 클라이언트 관리)
+// 3. DB Query Definition
 // =================================================================
-
-// { userId: [ws1, ws2, ...] } 형태로 연결된 사용자들을 관리합니다.
-const connectedClients = {};
 
 // 메시지 저장 쿼리
 const sqlInsertMessage = `
     INSERT INTO message (roomId, userId, content, contentType) 
     VALUES (?, ?, ?, ?);
 `;
-
-// 채팅방 참여자 ID 조회 쿼리
-const sqlGetParticipants = `SELECT userId FROM participant WHERE roomId = ?`;
-
 
 // =================================================================
 // 4. Feature Implement (모듈 내보내기)
@@ -52,12 +46,8 @@ const sqlGetParticipants = `SELECT userId FROM participant WHERE roomId = ?`;
 async function handleWebSocketConnection(ws, req) {
     const userId = req.user.userId;
 
-    // [1] 연결 수립 시 처리
-    if (!connectedClients[userId]) {
-        connectedClients[userId] = [];
-    }
-    connectedClients[userId].push(ws);
-    logger.info(`[WS Connect] User ${userId} connected. Total connections: ${connectedClients[userId].length}`);
+    // [1] 연결 수립 시 처리: wsManager에 등록
+    wsManager.registerConnection(userId, ws);
 
     
     // ===================================================
@@ -104,13 +94,13 @@ async function handleWebSocketConnection(ws, req) {
                 date: new Date().toISOString()
             };
 
-            // 2-5. 해당 채팅방의 모든 참여자에게 메시지 발송
-            await broadcastMessageToRoom(roomId, broadcastPayload);
-            logger.debug(`[WS Send] Message ${messageId} broadcasted to Room ${roomId}`);
+            // 2-5. 해당 채팅방의 모든 참여자에게 메시지 발송 (wsManager 사용)
+            await wsManager.broadcastMessageToRoom(roomId, broadcastPayload);
+            logger.debug(`[WS Send] Message ${messageId} broadcasted to Room ${roomId} via WS Manager`);
 
 
         } catch (error) {
-            // [6] 오류 처리 및 롤백 (WS는 롤백이 필요 없음)
+            // [6] 오류 처리 
             logger.error(`[WS Handler Error] Error processing message from User ${userId}: ${error.message}`, error);
             ws.send(JSON.stringify({ error: 'Internal server error processing message.' }));
             
@@ -126,50 +116,11 @@ async function handleWebSocketConnection(ws, req) {
     // [3] 연결 종료 처리 (ws.on('close'))
     // ===================================================
     ws.on('close', () => {
-        if (connectedClients[userId]) {
-            connectedClients[userId] = connectedClients[userId].filter(client => client !== ws);
-            
-            if (connectedClients[userId].length === 0) {
-                delete connectedClients[userId];
-            }
-        }
-        logger.info(`[WS Disconnect] User ${userId} disconnected. Remaining connections: ${connectedClients[userId]?.length || 0}`);
+        // wsManager에서 등록 해제
+        wsManager.unregisterConnection(userId, ws);
     });
-}
 
-/**
- * @description 특정 채팅방의 모든 참여자에게 메시지를 발송합니다. (DB 접근 포함)
- */
-async function broadcastMessageToRoom(roomId, payload) {
-    let connection;
-    try {
-        // [1] DB 연결 획득
-        connection = await util.promisify(db.getConnection).call(db);
-
-        // [2] DB에서 해당 채팅방의 모든 참여자 ID를 조회합니다.
-        const results = await connectionQueryPromise(connection, sqlGetParticipants, [roomId]);
-        
-        const participantIds = results.map(row => row.userId);
-        const payloadString = JSON.stringify(payload);
-
-        // [3] 연결된 클라이언트 맵을 순회하며 메시지 전송
-        participantIds.forEach(participantId => {
-            const clients = connectedClients[participantId];
-            
-            if (clients) {
-                clients.forEach(client => {
-                    if (client.readyState === 1) { // WebSocket.OPEN
-                        client.send(payloadString);
-                    }
-                });
-            }
-        });
-
-    } catch (error) {
-        logger.error(`[Broadcast Error] Failed to broadcast message for Room ${roomId}: ${error.message}`);
-    } finally {
-        if (connection) connection.release();
-    }
+    // 참고: ws.on('error') 처리는 생략하고, wsManager의 unregisterConnection이 clean up을 처리하도록 합니다.
 }
 
 

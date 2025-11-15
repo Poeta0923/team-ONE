@@ -20,11 +20,14 @@ const verifyToken = require('../lib/util/authMiddleware');
 // [1] 1대1 채팅방 생성 모듈 호출
 const private = require('../lib/chat/private');
 
-// [2] 채팅 전송 모듈 호출 (WS 라우팅은 app.js에서 처리)
-// const message = require('../lib/chat/message'); // HTTP 라우터에서는 필요 없으므로 주석 처리
-
-// [3] 채팅 목록 조회 모듈 호출
+// [2] 채팅 목록 조회 모듈 호출
 const list = require ('../lib/chat/list');
+
+// [3] 채팅 화면 반환 모듈 호출
+const room = require('../lib/chat/room');
+
+// [4] 메뉴 필요 정보 반환 모듈 호출
+const menu = require('../lib/chat/menu')
 
 // =================================================================
 // 3. API Route Endpoints Definition
@@ -55,6 +58,15 @@ router.get('/room/:roomId', verifyToken, (req, res) => {
 
     room.getMessages(req, res);
 });
+
+// [4] [GET] /api/chat/menu/:roomId 경로 정의
+router.get('/menu/:roomId', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    // URL 파라미터를 로그에 포함하도록 수정
+    logger.info(`GET /api/chat/menu/${req.params.roomId} - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    menu.menu(req, res);
+})
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기
 module.exports = router;

@@ -48,6 +48,7 @@ const chatRouter = require('./router/chatRouter');
 // [WebSocket 라우팅을 위해 추가]
 const verifyToken = require('./lib/util/authMiddleware'); // JWT 인증 미들웨어
 const message = require('./lib/chat/message'); // 채팅 전송 모듈
+const invite = require('./lib/chat/invite'); //프로젝트 초대 모듈
 
 // HTTP 라우터 연결
 app.use('/api', rootRouter);
@@ -65,6 +66,14 @@ app.ws('/api/chat/message', verifyToken, (ws, req)=>{
 
     // message.message 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
     message.message(ws, req);
+})
+
+// [WS] /api/chat/invite 경로 정의
+app.ws('/api/chat/invite', verifyToken, (ws, req)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`ws /api/chat/invite - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    invite.invite(ws, req);
 })
 
 
