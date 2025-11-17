@@ -12,7 +12,7 @@ const verifyToken = (req, res, next) => {
     // --------------------------------------------------
     // 1. Authorization Header (일반 HTTP 요청)
     // --------------------------------------------------
-    const authHeader = req.headers.authorization;
+const authHeader = req.headers?.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
         logger.debug('[Auth Check] HTTP Header에서 토큰 발견');
