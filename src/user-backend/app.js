@@ -11,15 +11,33 @@ const express = require('express');
 const bodyParser = require('body-parser');
 // 프로젝트 전역 로거 (Winston) 로드
 const logger = require('./lib/util/logger');
-// Express 애플리케이션 인스턴스 생성
-const app = express();
-// Express WebSocket 통합 모듈 로드 및 적용
-const expressWs = require('express-ws')(app);
+const expressWs = require('express-ws')(express());
+const app = expressWs.app; // expressWs가 wrapping한 app 사용
 
-// [새로 추가된 모듈] Node.js에서 외부 프로그램(JAR)을 실행하기 위한 모듈
 const { spawn } = require('child_process');
 // [새로 추가된 모듈] HTTP 요청을 다른 서버로 전달하는 프록시 미들웨어
 const { createProxyMiddleware } = require('http-proxy-middleware');
+
+// 파일 업로드용
+const path = require('path');
+const fs = require('fs');
+
+// =================================================================
+// 1-1. 업로드 디렉토리 자동 생성
+// =================================================================
+
+const uploadDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    logger.info(`📁 uploads 폴더 자동 생성됨: ${uploadDir}`);
+} else {
+    logger.info(`📁 uploads 폴더 확인됨: ${uploadDir}`);
+}
+
+// Express static으로 외부 접근 가능하도록 처리
+app.use('/uploads', express.static(uploadDir));
+
 
 // =================================================================
 // 2. Global Middleware Configuration
@@ -31,6 +49,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // [2] 기타 미들웨어: favicon 처리
 app.get('/favicon.ico', (req, res) => res.status(404).end());
+
 
 // =================================================================
 // 3. Spring Boot Child Process & Proxy Configuration
@@ -44,7 +63,11 @@ let springProcess = null;
 function startSpringBoot() {
     logger.info(`Starting Spring Boot server (${SPRING_BOOT_JAR_FILENAME}) on internal port ${SPRING_BOOT_INTERNAL_PORT}...`);
 
-    springProcess = spawn('java', ['-jar', SPRING_BOOT_JAR_FILENAME], { detached: false });
+    springProcess = spawn(
+        'java',
+        ['-jar', SPRING_BOOT_JAR_FILENAME, '--spring.profiles.active=prod'],
+        { detached: false }
+    );
 
     springProcess.stdout.on('data', (data) => {
         logger.debug(`[SB-OUT] ${data.toString().trim()}`);
@@ -63,30 +86,30 @@ function startSpringBoot() {
     });
 }
 
+
 // =================================================================
 // 4. Router & Service Implementation
 // =================================================================
 
-// Spring Boot 프록시 (/admin)
-app.use(
-    '/admin',
+app.use('/admin',
     createProxyMiddleware({
         target: `http://localhost:${SPRING_BOOT_INTERNAL_PORT}`,
         changeOrigin: true,
-        pathRewrite: { '^/admin': '' },
         onProxyReq: (proxyReq, req, res) => {
-            logger.info(`Proxying request: ${req.method} ${req.originalUrl} -> ${SPRING_BOOT_INTERNAL_PORT}${req.url}`);
+            logger.info(`Proxy: ${req.method} ${req.originalUrl} -> ${SPRING_BOOT_INTERNAL_PORT}${req.url}`);
         }
     })
 );
 
-// 기존 Node.js 라우터 연결
+// Node API 라우터
 app.use('/api', require('./router/rootRouter'));
 app.use('/api/auth', require('./router/authRouter'));
 app.use('/api/project', require('./router/projectRouter'));
 app.use('/api/myPage', require('./router/myPageRouter'));
 app.use('/api/resume', require('./router/resumeRouter'));
 app.use('/api/chat', require('./router/chatRouter'));
+app.use('/api/chatUpload', require('./router/chatUploadRouter')); // ← 파일 업로드 라우터 추가
+
 
 // =================================================================
 // 4-1. WebSocket Routes
@@ -95,20 +118,34 @@ app.use('/api/chat', require('./router/chatRouter'));
 const verifyToken = require('./lib/util/authMiddleware');
 const message = require('./lib/chat/message');
 const invite = require('./lib/chat/invite');
+const resume = require('./lib/chat/resume');
 
-// WebSocket 인증: 해당 경로로 들어오는 요청은 핸드셰이크 단계에서 JWT 검증
-app.use('/api/chat/message', verifyToken);
-app.ws('/api/chat/message', (ws, req) => {
-    logger.info(`WS /api/chat/message - User: ${req.user ? req.user.userId : 'N/A'}`);
-    // message.js 내에서 ws.on('message') / ws.on('close') 처리
+// WebSocket 요청 핸들링 유틸
+function wsRoute(path, handler) {
+    app.ws(path, (ws, req, next) => {
+        req.ws = true;
+        req.wsSocket = ws;
+        next();
+    }, verifyToken, (ws, req) => {
+        handler(ws, req);
+    });
+}
+
+wsRoute('/api/chat/message', (ws, req) => {
+    logger.info(`WS /api/chat/message - User: ${req.user?.userId || 'N/A'}`);
     message.message(ws, req);
 });
 
-app.use('/api/chat/invite', verifyToken);
-app.ws('/api/chat/invite', (ws, req) => {
-    logger.info(`WS /api/chat/invite - User: ${req.user ? req.user.userId : 'N/A'}`);
+wsRoute('/api/chat/invite', (ws, req) => {
+    logger.info(`WS /api/chat/invite - User: ${req.user?.userId || 'N/A'}`);
     invite.invite(ws, req);
 });
+
+wsRoute('/api/chat/resume', (ws, req) => {
+    logger.info(`WS /api/chat/resume - User: ${req.user?.userId || 'N/A'}`);
+    resume.resume(ws, req);
+});
+
 
 // =================================================================
 // 5. Server Initialization
@@ -120,10 +157,11 @@ const HOST = process.env.HOST || '0.0.0.0';
 startSpringBoot();
 
 app.listen(PORT, HOST, () => {
-    logger.info(`Server is running at http://${HOST}:${PORT}`);
-    logger.info(`Spring Boot is running internally on port ${SPRING_BOOT_INTERNAL_PORT}`);
-    logger.info(`Spring Boot API access path: http://${HOST}:${PORT}/admin/*`);
+    logger.info(`🚀 Server is running at http://${HOST}:${PORT}`);
+    logger.info(`🔧 Spring Boot running on port ${SPRING_BOOT_INTERNAL_PORT}`);
+    logger.info(`🔗 Admin API: http://${HOST}:${PORT}/admin/*`);
 });
+
 
 // =================================================================
 // 6. Graceful Shutdown
@@ -131,21 +169,16 @@ app.listen(PORT, HOST, () => {
 
 process.on('SIGTERM', () => {
     logger.warn('SIGTERM received. Shutting down gracefully...');
-    if (springProcess) {
-        logger.warn('Terminating Spring Boot child process...');
-        springProcess.kill();
-    }
+    if (springProcess) springProcess.kill();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
     logger.warn('SIGINT received. Shutting down gracefully...');
-    if (springProcess) {
-        logger.warn('Terminating Spring Boot child process...');
-        springProcess.kill();
-    }
+    if (springProcess) springProcess.kill();
     process.exit(0);
 });
+
 
 // =================================================================
 // 7. Global Error Handler (HTTP 공통)
@@ -154,9 +187,8 @@ process.on('SIGINT', () => {
 app.use((err, req, res, next) => {
     logger.error(`Global Error: ${err.message}`);
 
-    if (res.headersSent) {
-        return next(err);
-    }
+    if (res.headersSent) return next(err);
 
     res.status(err.status || 500).json({ error: err.message });
 });
+

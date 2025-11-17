@@ -32,6 +32,9 @@ const menu = require('../lib/chat/menu');
 // [5] 프로젝트 초대 수락 모듈 호출
 const accept = require('../lib/chat/accept');
 
+// [6] 사용자 신고 모듈 호출
+const report = require('../lib/chat/report');
+
 // =================================================================
 // 3. API Route Endpoints Definition
 // =================================================================
@@ -76,6 +79,14 @@ router.post('/accept', verifyToken, (req, res)=>{
     logger.info(`POST /api/chat/accept - User: ${req.user ? req.user.userId : 'N/A'}`);
 
     accept.accept(req, res);
+})
+
+// [6] [POST] /api/chat/report 경로 정의
+router.post('/report', verifyToken, (req, res)=>{
+    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    logger.info(`POST /api/chat/report - User: ${req.user ? req.user.userId : 'N/A'}`);
+
+    report.report(req, res);
 })
 
 // 다른 파일(server.js)에서 사용할 수 있도록 router 객체 내보내기

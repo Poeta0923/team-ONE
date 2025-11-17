@@ -10,6 +10,15 @@ const util = require('util');
 // 2. DB Query Definition
 // =================================================================
 
+function connectionQueryPromise(connection, sql, values = []) {
+    return new Promise((resolve, reject) => {
+        connection.query(sql, values, (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+        });
+    });
+}
+
 // [1] 프로젝트에 멤버 추가 (초대 수락자)
 // ⭐ state 필드에 '참여' 상태를 명시적으로 추가합니다.
 const sqlAddMember = 'INSERT INTO members (projectId, member, role, state) VALUES (?, ?, "팀원", "참여");';
