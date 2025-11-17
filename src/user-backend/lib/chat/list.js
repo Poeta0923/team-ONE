@@ -38,7 +38,8 @@ const sqlChatList = `
                  FROM participant P_OTHER 
                  JOIN users U ON P_OTHER.userId = U.userId
                  WHERE P_OTHER.roomId = R.roomId 
-                 AND P_OTHER.userId != ?
+                   AND P_OTHER.userId != ?
+                 ORDER BY P_OTHER.participantId ASC
                  LIMIT 1)
             ELSE P.name
         END AS chatName,
@@ -52,7 +53,7 @@ const sqlChatList = `
             SELECT COUNT(M.messageId)
             FROM message M 
             WHERE M.roomId = R.roomId 
-            AND M.date > IFNULL(T.lastRead, '1970-01-01')
+              AND M.date > IFNULL(T.lastRead, '1970-01-01')
         ) AS unreadCount
         
     FROM participant T
@@ -60,7 +61,10 @@ const sqlChatList = `
     LEFT JOIN projects P ON R.projectId = P.projectId 
     
     WHERE T.userId = ? 
-    ORDER BY R.lastMessage DESC, R.date DESC;
+
+    -- ⭐ lastMessage가 NULL이면 date를 사용하여 안정적인 정렬 보장
+    ORDER BY 
+        COALESCE(R.lastMessage, R.date) DESC;
 `;
 
 
@@ -85,10 +89,10 @@ module.exports = {
             connection = await util.promisify(db.getConnection).call(db);
 
             // [3] 채팅 목록 쿼리 실행
-            // 두 개의 바인딩 변수에 currentUserId를 전달합니다. 
-            // 1. 서브쿼리(나 아닌 상대방 찾기)
-            // 2. 메인 쿼리(내가 참여한 방 찾기)
-            const results = await connectionQueryPromise(connection, sqlChatList, [currentUserId, currentUserId]); 
+            const results = await connectionQueryPromise(connection, sqlChatList, [
+                currentUserId, // 서브쿼리의 userId != ?
+                currentUserId  // 메인 쿼리 T.userId = ?
+            ]); 
 
             // [4] 최종 응답 전송
             logger.info(`[Chat List Success] ${currentUserId}의 채팅 목록 ${results.length}개 조회 완료`);

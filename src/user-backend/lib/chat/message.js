@@ -16,10 +16,6 @@ const wsManager = require('./wsManager');
 
 /**
  * @description MySQL connection.query를 Promise 방식으로 감싸는 헬퍼
- * @param {object} connection - Pool에서 가져온 MySQL connection
- * @param {string} sql - 실행할 SQL 쿼리
- * @param {Array} values - 바인딩할 파라미터 배열
- * @returns {Promise<any[]>} - 쿼리 결과(rows)
  */
 const connectionQueryPromise = (connection, sql, values = []) => {
     return new Promise((resolve, reject) => {
@@ -34,14 +30,16 @@ const connectionQueryPromise = (connection, sql, values = []) => {
 const sqlInsertMessage =
     'INSERT INTO message (roomId, userId, content, contentType) VALUES (?, ?, ?, ?);';
 
+// 마지막 메시지 시간 업데이트 쿼리
+const sqlUpdateLastMessage =
+    'UPDATE room SET lastMessage = NOW() WHERE roomId = ?;';
+
 // =================================================================
 // 4. Feature Implement
 // =================================================================
 
 /**
  * @description WebSocket 연결을 처리하고 메시지 수신 및 발송을 관리합니다.
- * @param {WebSocket} ws
- * @param {Request} req
  */
 async function handleWebSocketConnection(ws, req) {
     const userId = req.user.userId;
@@ -50,13 +48,13 @@ async function handleWebSocketConnection(ws, req) {
     wsManager.registerConnection(userId, ws);
 
     // ===================================================
-    // [2] 메시지 수신 처리 (ws.on('message'))
+    // [2] 메시지 수신 처리
     // ===================================================
     ws.on('message', async (msg) => {
         let connection;
 
         try {
-            // 2-1. 메시지 파싱
+            // 2-1. 메시지 문자열 파싱
             const raw = msg.toString();
             let parsedMessage;
 
@@ -72,11 +70,11 @@ async function handleWebSocketConnection(ws, req) {
                 return;
             }
 
-            // 2-2. 정제 (XSS 방어 등)
+            // 2-2. 정제(XSS 방어)
             const safeMessage = sanitize.sanitizeObject(parsedMessage);
             const { roomId, content, contentType } = safeMessage;
 
-            // 2-3. 메시지 유효성 검사 (roomId와 content 필수)
+            // 2-3. 유효성 검사
             if (!roomId || !content) {
                 logger.warn(
                     `[WS Message] Invalid message format (Missing roomId or content) from User ${userId}`
@@ -91,7 +89,7 @@ async function handleWebSocketConnection(ws, req) {
                 return;
             }
 
-            // 2-4. DB 연결 획득 (유효성 검사 통과 후)
+            // 2-4. DB 연결 획득
             connection = await util.promisify(db.getConnection).call(db);
 
             // 2-5. DB에 메시지 저장
@@ -110,25 +108,30 @@ async function handleWebSocketConnection(ws, req) {
             ]);
             const messageId = result.insertId;
 
-            // 2-6. 브로드캐스트할 최종 메시지 객체 생성
+            // ⭐ 2-6. room 테이블의 lastMessage 갱신
+            await connectionQueryPromise(connection, sqlUpdateLastMessage, [roomId]);
+
+            // 2-7. WS 브로드캐스트용 메시지 객체
             const broadcastPayload = {
-                type: 'NEW_MESSAGE', // 브로드캐스트 메시지 타입 명시
+                type: 'NEW_MESSAGE',
                 messageId,
                 ...messageData,
                 date: new Date().toISOString(),
             };
 
-            // 2-7. 해당 채팅방의 모든 참여자에게 메시지 발송
+            // 2-8. 해당 방에 참여한 모든 유저에게 메시지 전송
             await wsManager.broadcastMessageToRoom(roomId, broadcastPayload);
+
             logger.debug(
                 `[WS Send] Message ${messageId} broadcasted to Room ${roomId} via WS Manager`
             );
+
         } catch (error) {
-            // [6] 오류 처리
             logger.error(
                 `[WS Handler Error] Error processing message from User ${userId}: ${error.message}`,
                 error
             );
+
             try {
                 ws.send(
                     JSON.stringify({
@@ -136,6 +139,7 @@ async function handleWebSocketConnection(ws, req) {
                     })
                 );
             } catch (_) {}
+
         } finally {
             // DB 연결 반환
             if (connection) {
@@ -145,7 +149,7 @@ async function handleWebSocketConnection(ws, req) {
     });
 
     // ===================================================
-    // [3] 연결 종료 처리 (ws.on('close'))
+    // [3] 연결 종료 처리
     // ===================================================
     ws.on('close', () => {
         wsManager.unregisterConnection(userId, ws);
