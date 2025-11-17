@@ -8,6 +8,7 @@ import ReportDetailPage from './pages/admin/users/ReportDetailPage';
 import ProjectsPage from './pages/admin/projects/ProjectsPage';
 import ContestsPage from './pages/admin/contests/ContestsPage';
 import AIPage from './pages/admin/ai/AIPage';
+import AIModelEditPage from './pages/admin/ai/AIModelEditPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -24,6 +25,7 @@ function App() {
         <Route path="/admin/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
         <Route path="/admin/contests" element={<ProtectedRoute><ContestsPage /></ProtectedRoute>} />
         <Route path="/admin/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
+        <Route path="/admin/ai/edit/:modelType" element={<ProtectedRoute><AIModelEditPage /></ProtectedRoute>} />
       </Routes>
     </div>
   );

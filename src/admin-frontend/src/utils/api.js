@@ -35,6 +35,11 @@ export const API_ENDPOINTS = {
   
   // 대시보드
   DASHBOARD: `${API_BASE_URL}/admin/dashboard`,
+  
+  // AI 모델 관리
+  AI_MODEL_ACCURACY: `${API_BASE_URL}/admin/ai-model`,
+  AI_MODEL_PARAMETER_SCORE: `${API_BASE_URL}/admin/ai-model/parameter/score`,
+  AI_MODEL_PARAMETER_ACCEPTOR: `${API_BASE_URL}/admin/ai-model/parameter/acceptor`,
 };
 
 // 로컬 스토리지에서 토큰 가져오기
@@ -718,6 +723,62 @@ const mockData = {
         { userId: 5, name: "최유저", date: "2024-04-18T17:00:00" }
       ]
     }
+  },
+
+  // AI 모델 정확도
+  aiModelAccuracy: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "AI 모델 현황 조회 성공",
+    data: [
+      { 
+        modelName: "후보생성 모델", 
+        "HitRate@K": {
+          "1": 1.0,
+          "3": 1.0,
+          "5": 1.0,
+          "10": 1.0
+        },
+        "Recall@K": {
+          "1": 1.0,
+          "3": 1.0,
+          "5": 1.0,
+          "10": 1.0
+        } 
+      },
+      {
+        modelName: "재정렬 모델", 
+        "ndcg@4": 0.9902403950467509, 
+        "precision@4": 0.75
+      },
+      { 
+        modelName: "수락확률 모델", 
+        "pr_auc": 0.9973684210526316,
+        "f1": 0.972972972972973 
+      }
+    ]
+  },
+
+  // AI 모델 파라미터 - 재정렬 모델
+  aiModelParameterScore: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "재정렬 모델 파라미터 조회 성공",
+    data: {
+      modelName: "재정렬 모델",
+      learningRate: 0.001
+    }
+  },
+
+  // AI 모델 파라미터 - 수락확률 모델
+  aiModelParameterAcceptor: {
+    contentType: "json",
+    resultCode: 200,
+    successMessage: "수락확률 모델 파라미터 조회 성공",
+    data: {
+      modelName: "수락확률 모델",
+      learningRate: 0.0001
+    }
   }
 };
 
@@ -1020,6 +1081,91 @@ export const fetchDashboard = async () => {
   
   const response = await fetch(API_ENDPOINTS.DASHBOARD, {
     headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// AI 모델 정확도 조회
+export const fetchAIModelAccuracy = async () => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.aiModelAccuracy;
+  }
+  
+  const response = await fetch(API_ENDPOINTS.AI_MODEL_ACCURACY, {
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// AI 모델 파라미터 조회 - 재정렬 모델
+export const fetchAIModelParameterScore = async () => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.aiModelParameterScore;
+  }
+  
+  const response = await fetch(API_ENDPOINTS.AI_MODEL_PARAMETER_SCORE, {
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// AI 모델 파라미터 조회 - 수락확률 모델
+export const fetchAIModelParameterAcceptor = async () => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return mockData.aiModelParameterAcceptor;
+  }
+  
+  const response = await fetch(API_ENDPOINTS.AI_MODEL_PARAMETER_ACCEPTOR, {
+    headers: getAuthHeaders()
+  });
+  return response.json();
+};
+
+// AI 모델 파라미터 수정 - 재정렬 모델
+export const updateAIModelParameterScore = async (learningRate) => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "재정렬 모델 파라미터가 성공적으로 수정되었습니다.",
+      data: {
+        modelName: "재정렬 모델",
+        learningRate: learningRate
+      }
+    };
+  }
+  
+  const response = await fetch(API_ENDPOINTS.AI_MODEL_PARAMETER_SCORE, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ learningRate })
+  });
+  return response.json();
+};
+
+// AI 모델 파라미터 수정 - 수락확률 모델
+export const updateAIModelParameterAcceptor = async (learningRate) => {
+  if (USE_MOCK_API) {
+    await mockDelay();
+    return {
+      contentType: "json",
+      resultCode: 200,
+      successMessage: "수락확률 모델 파라미터가 성공적으로 수정되었습니다.",
+      data: {
+        modelName: "수락확률 모델",
+        learningRate: learningRate
+      }
+    };
+  }
+  
+  const response = await fetch(API_ENDPOINTS.AI_MODEL_PARAMETER_ACCEPTOR, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ learningRate })
   });
   return response.json();
 };
