@@ -24,6 +24,12 @@ const util = require('util');
  * @param {Array} values SQL 쿼리에 바인딩할 값들의 배열
  * @returns {Promise<object>} 쿼리 결과를 resolve하는 프로미스
  */
+// 💡 참고: connectionQueryPromise 함수 정의가 누락되어 있지만, 
+//        기존 코드의 흐름을 유지하기 위해 사용한다고 가정하고 코드를 수정합니다.
+const connectionQueryPromise = (connection, sql, values) => {
+    return util.promisify(connection.query).call(connection, sql, values);
+};
+
 
 // =================================================================
 // 3. Feature Implement (모듈 내보내기)
@@ -52,6 +58,9 @@ module.exports = {
      */
     private: async (req, res) => {
         let connection; 
+        // 🌟 수정: createdNew 변수를 함수 스코프 내에서 선언하여 
+        //         try와 catch 블록 모두에서 접근 가능하게 만듭니다.
+        let createdNew = false; 
 
         // [1] 사용자 ID 및 입력 추출
         const currentUserId = req.user.userId;
@@ -79,7 +88,7 @@ module.exports = {
             
             let roomId;
             let roomInfo;
-            let createdNew = false;
+            // 이전 코드에서 이곳에 'let createdNew = false;'가 있었는데, 제거하고 위에 선언했습니다.
             
             // [3] 기존 방 처리
             if (resultFind && resultFind.length > 0) {
@@ -93,7 +102,7 @@ module.exports = {
             } else {
                 // [4] 새 방 생성 (트랜잭션 시작)
                 await util.promisify(connection.beginTransaction).call(connection);
-                createdNew = true;
+                createdNew = true; // 🌟 try 블록 외부의 변수에 값 할당
                 
                 // [4-1] room 테이블에 새 방 생성
                 const resultRoomInsert = await connectionQueryPromise(connection, sqlInsertRoom);
@@ -128,7 +137,8 @@ module.exports = {
 
         } catch (error) {
             // [6] 오류 처리 및 롤백
-            if (connection && createdNew) {
+            // 🌟 이제 createdNew 변수에 안전하게 접근 가능
+            if (connection && createdNew) { 
                 // 새 방 생성 중 오류가 발생한 경우만 롤백 실행
                 await util.promisify(connection.rollback).call(connection); 
                 logger.warn(`[Private Chat Rollback] 새 방 생성 중 오류로 롤백 실행됨.`);

@@ -7,7 +7,25 @@ const logger = require('../util/logger');
 const util = require('util');
 
 // =================================================================
-// 2. DB Query Definition
+// 2. Utility Functions (추가 필요)
+// =================================================================
+
+/**
+ * @description 단일 MySQL 연결 객체를 사용하여 쿼리를 Promise 기반으로 실행합니다.
+ * 트랜잭션 환경 및 일반 쿼리 실행 시 사용됩니다.
+ * @param {object} connection 현재 사용 중인 DB 연결 객체 (풀에서 가져온 것)
+ * @param {string} sql 실행할 SQL 쿼리 문자열
+ * @param {Array} values SQL 쿼리에 바인딩할 값들의 배열
+ * @returns {Promise<object>} 쿼리 결과를 resolve하는 프로미스
+ */
+const connectionQueryPromise = (connection, sql, values) => {
+    // connection 객체의 query 메서드를 Promisify하여 실행
+    // MySQL 연결 객체에 Promisify를 적용하려면 util.promisify(connection.query).call(connection, ...) 형태가 필요합니다.
+    return util.promisify(connection.query).call(connection, sql, values);
+};
+
+// =================================================================
+// 3. DB Query Definition
 // =================================================================
 
 // 특정 채팅방의 메시지 목록을 가져오는 쿼리 (닉네임 포함, 페이징 적용)
@@ -41,7 +59,7 @@ const sqlUpdateLastRead = `
 
 
 // =================================================================
-// 3. Feature Implement (모듈 내보내기)
+// 4. Feature Implement (모듈 내보내기)
 // =================================================================
 
 module.exports = {
@@ -88,6 +106,7 @@ module.exports = {
             logger.info(`[Chat Room Success] Room ${roomId} 메시지 ${results.length}개 조회 완료.`);
             res.status(200).json({
                 message: 'Messages retrieved successfully',
+                myId: currentUserId,
                 roomId: roomId,
                 // DESC로 가져왔으므로, 클라이언트에서 ASC로 보여주기 위해 .reverse()가 필요할 수 있습니다.
                 list: results 

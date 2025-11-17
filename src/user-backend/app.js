@@ -8,83 +8,155 @@ require('dotenv').config();
 // Express 프레임워크 로드
 const express = require('express');
 // HTTP 요청 본문 파싱 미들웨어 로드 (HTML 폼 데이터 처리)
-const bodyParser = require('body-parser'); 
+const bodyParser = require('body-parser');
 // 프로젝트 전역 로거 (Winston) 로드
-const logger = require('./lib/util/logger'); 
+const logger = require('./lib/util/logger');
 // Express 애플리케이션 인스턴스 생성
 const app = express();
 // Express WebSocket 통합 모듈 로드 및 적용
 const expressWs = require('express-ws')(app);
+
+// [새로 추가된 모듈] Node.js에서 외부 프로그램(JAR)을 실행하기 위한 모듈
+const { spawn } = require('child_process');
+// [새로 추가된 모듈] HTTP 요청을 다른 서버로 전달하는 프록시 미들웨어
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // =================================================================
 // 2. Global Middleware Configuration
 // =================================================================
 
 // [1] 요청 본문(body) 파싱 설정
-// JSON 형식의 요청 본문 파싱 추가 (대부분의 API 요청에서 사용)
-app.use(bodyParser.json()); 
-
-// application/x-www-form-urlencoded 형식의 데이터 파싱 (HTML Form POST 요청)
-// extended: false는 Node.js 기본 라이브러리 사용을 의미
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // [2] 기타 미들웨어: favicon 처리
-// 브라우저의 favicon 요청(GET /favicon.ico)에 대한 404 응답 처리
-// 서버 로그에 불필요한 에러/경고가 남는 것을 방지
 app.get('/favicon.ico', (req, res) => res.status(404).end());
 
 // =================================================================
-// 3. Router & Service Implementation
+// 3. Spring Boot Child Process & Proxy Configuration
 // =================================================================
 
-// 필요한 라우터 파일 및 미들웨어/컨트롤러 로드
-const rootRouter = require('./router/rootRouter');
-const authRouter = require('./router/authRouter');
-const projectRouter = require('./router/projectRouter');
-const myPageRouter = require('./router/myPageRouter');
-const resumeRouter = require('./router/resumeRouter');
-const chatRouter = require('./router/chatRouter');
+const SPRING_BOOT_INTERNAL_PORT = 10000;
+const SPRING_BOOT_JAR_FILENAME = '../admin-backend/team-ONE/build/libs/admin-server-0.0.1-SNAPSHOT.jar';
 
-// [WebSocket 라우팅을 위해 추가]
-const verifyToken = require('./lib/util/authMiddleware'); // JWT 인증 미들웨어
-const message = require('./lib/chat/message'); // 채팅 전송 모듈
-const invite = require('./lib/chat/invite'); //프로젝트 초대 모듈
+let springProcess = null;
 
-// HTTP 라우터 연결
-app.use('/api', rootRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/project', projectRouter);
-app.use('/api/myPage', myPageRouter);
-app.use('/api/resume', resumeRouter);
-app.use('/api/chat', chatRouter);
+function startSpringBoot() {
+    logger.info(`Starting Spring Boot server (${SPRING_BOOT_JAR_FILENAME}) on internal port ${SPRING_BOOT_INTERNAL_PORT}...`);
 
-// [WS] /api/chat/message 경로 정의 (WebSocket 핸들러)
-// express-ws의 제한으로 인해 app.js에서 직접 WebSocket 라우팅을 정의합니다.
-app.ws('/api/chat/message', verifyToken, (ws, req)=>{
-    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
+    springProcess = spawn('java', ['-jar', SPRING_BOOT_JAR_FILENAME], { detached: false });
+
+    springProcess.stdout.on('data', (data) => {
+        logger.debug(`[SB-OUT] ${data.toString().trim()}`);
+    });
+
+    springProcess.stderr.on('data', (data) => {
+        logger.info(`[SB-ERR] ${data.toString().trim()}`);
+    });
+
+    springProcess.on('error', (err) => {
+        logger.error(`Failed to start Spring Boot process: ${err.message}`);
+    });
+
+    springProcess.on('close', (code) => {
+        logger.warn(`Spring Boot process exited with code ${code}`);
+    });
+}
+
+// =================================================================
+// 4. Router & Service Implementation
+// =================================================================
+
+// Spring Boot 프록시 (/admin)
+app.use(
+    '/admin',
+    createProxyMiddleware({
+        target: `http://localhost:${SPRING_BOOT_INTERNAL_PORT}`,
+        changeOrigin: true,
+        pathRewrite: { '^/admin': '' },
+        onProxyReq: (proxyReq, req, res) => {
+            logger.info(`Proxying request: ${req.method} ${req.originalUrl} -> ${SPRING_BOOT_INTERNAL_PORT}${req.url}`);
+        }
+    })
+);
+
+// 기존 Node.js 라우터 연결
+app.use('/api', require('./router/rootRouter'));
+app.use('/api/auth', require('./router/authRouter'));
+app.use('/api/project', require('./router/projectRouter'));
+app.use('/api/myPage', require('./router/myPageRouter'));
+app.use('/api/resume', require('./router/resumeRouter'));
+app.use('/api/chat', require('./router/chatRouter'));
+
+// =================================================================
+// 4-1. WebSocket Routes
+// =================================================================
+
+const verifyToken = require('./lib/util/authMiddleware');
+const message = require('./lib/chat/message');
+const invite = require('./lib/chat/invite');
+
+// WebSocket 인증: 해당 경로로 들어오는 요청은 핸드셰이크 단계에서 JWT 검증
+app.use('/api/chat/message', verifyToken);
+app.ws('/api/chat/message', (ws, req) => {
     logger.info(`WS /api/chat/message - User: ${req.user ? req.user.userId : 'N/A'}`);
-
-    // message.message 함수가 실행될 때 req.user 객체가 존재함을 보장합니다.
+    // message.js 내에서 ws.on('message') / ws.on('close') 처리
     message.message(ws, req);
-})
+});
 
-// [WS] /api/chat/invite 경로 정의
-app.ws('/api/chat/invite', verifyToken, (ws, req)=>{
-    // 이 라우트 핸들러는 verifyToken을 성공적으로 통과했을 때만 실행됩니다.
-    logger.info(`ws /api/chat/invite - User: ${req.user ? req.user.userId : 'N/A'}`);
-
+app.use('/api/chat/invite', verifyToken);
+app.ws('/api/chat/invite', (ws, req) => {
+    logger.info(`WS /api/chat/invite - User: ${req.user ? req.user.userId : 'N/A'}`);
     invite.invite(ws, req);
-})
-
+});
 
 // =================================================================
-// 4. Server Initialization
+// 5. Server Initialization
 // =================================================================
 
 const PORT = process.env.PORT || 60002;
 const HOST = process.env.HOST || '0.0.0.0';
 
+startSpringBoot();
+
 app.listen(PORT, HOST, () => {
-    // Winston logger를 사용하여 서버 시작 정보 기록
     logger.info(`Server is running at http://${HOST}:${PORT}`);
+    logger.info(`Spring Boot is running internally on port ${SPRING_BOOT_INTERNAL_PORT}`);
+    logger.info(`Spring Boot API access path: http://${HOST}:${PORT}/admin/*`);
+});
+
+// =================================================================
+// 6. Graceful Shutdown
+// =================================================================
+
+process.on('SIGTERM', () => {
+    logger.warn('SIGTERM received. Shutting down gracefully...');
+    if (springProcess) {
+        logger.warn('Terminating Spring Boot child process...');
+        springProcess.kill();
+    }
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    logger.warn('SIGINT received. Shutting down gracefully...');
+    if (springProcess) {
+        logger.warn('Terminating Spring Boot child process...');
+        springProcess.kill();
+    }
+    process.exit(0);
+});
+
+// =================================================================
+// 7. Global Error Handler (HTTP 공통)
+// =================================================================
+
+app.use((err, req, res, next) => {
+    logger.error(`Global Error: ${err.message}`);
+
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    res.status(err.status || 500).json({ error: err.message });
 });
