@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public class AiModelRepository extends JpaRepository<AiModel, Integer> {
+public interface AiModelRepository extends JpaRepository<AiModel, Integer> {
     // 모델 이름으로 모델을 찾는 기능 (예: "TeamOne-v1.1")
     Optional<AiModel> findByModelName(String modelName);
 }
