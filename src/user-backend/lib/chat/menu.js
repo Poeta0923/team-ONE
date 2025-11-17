@@ -10,6 +10,18 @@ const util = require('util');
 // 2. DB Query Definition
 // =================================================================
 
+// DB 쿼리용 헬퍼 함수 (기존 프로젝트 형식 유지)
+const connectionQueryPromise = (connection, sql, values) => {
+    return new Promise((resolve, reject) => {
+        connection.query(sql, values, (error, result) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve(result);
+        });
+    });
+};
+
 // 사용자가 참여하고 있는 모든 채팅방 목록을 조회하는 쿼리
 // 개인 채팅(projectId IS NULL)일 경우 상대방 닉네임을,
 // 프로젝트 채팅(projectId IS NOT NULL)일 경우 프로젝트 이름을 반환합니다.
@@ -77,7 +89,8 @@ module.exports = {
             res.status(200).json({
                 message: 'Chat menu information retrieved successfully', // 메시지 변경
                 projects: resultProjects,
-                members: resultMembers
+                members: resultMembers,
+                myId: userId
             });
 
         } catch (error) {
