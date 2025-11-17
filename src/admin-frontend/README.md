@@ -203,17 +203,8 @@ export const mockData = {
 ## 🚢 배포 가이드
 ### 체크리스트
 #### ✅ Mock 모드 비활성화
-`src/utils/api.js`:
-```javascript
-export const USE_MOCK_API = false;  // ⚠️ 반드시 false로 설정!
-```
-
 #### ✅ API URL 확인
-백엔드 서버 주소가 올바른지 확인:
-```javascript
-const getApiBaseUrl = () => {
-  return 'http://ceprj.gachon.ac.kr:60002';  // 실제 서버 주소
-};
-```
+백엔드 서버 주소가 올바른지 확인
+
 
 
