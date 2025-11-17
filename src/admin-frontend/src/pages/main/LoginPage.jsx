@@ -31,7 +31,6 @@ const LoginPage = () => {
       if (data.resultCode === 200) {
         if (data.data && data.data.accessToken && data.data.refreshToken) {
           setTokens(data.data.accessToken, data.data.refreshToken);
-          console.log(data.successMessage);
           navigate('/admin');
         } else {
           setError('토큰 정보가 올바르지 않습니다.');
@@ -40,7 +39,6 @@ const LoginPage = () => {
         setError(data.successMessage || '로그인에 실패했습니다.');
       }
     } catch (err) {
-      console.error('로그인 에러:', err);
       setError(err.message || '로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);

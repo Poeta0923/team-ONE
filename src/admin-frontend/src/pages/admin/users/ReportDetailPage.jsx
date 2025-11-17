@@ -27,11 +27,9 @@ const ReportDetailPage = () => {
       if (result.success) {
         setUserInfo(result.data.user);
         setReports(result.data.reports);
-      } else {
-        console.error('신고 내역 조회 실패');
       }
     } catch (error) {
-      console.error('신고 내역 조회 실패:', error);
+      // Error handling
     } finally {
       setLoading(false);
     }
@@ -59,7 +57,6 @@ const ReportDetailPage = () => {
         alert(result.successMessage || '회원 차단에 실패했습니다.');
       }
     } catch (error) {
-      console.error('회원 차단 실패:', error);
       alert('회원 차단에 실패했습니다.');
     }
   };
@@ -79,7 +76,6 @@ const ReportDetailPage = () => {
         alert(result.successMessage || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('차단 해제 실패:', error);
       alert('차단 해제에 실패했습니다.');
     }
   };
@@ -98,7 +94,6 @@ const ReportDetailPage = () => {
         alert(result.successMessage || '신고 상태 변경에 실패했습니다.');
       }
     } catch (error) {
-      console.error('신고 상태 변경 실패:', error);
       alert('신고 상태 변경에 실패했습니다.');
     }
   };

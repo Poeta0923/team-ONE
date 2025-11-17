@@ -132,8 +132,43 @@
 }
 
 .single-parameter-container {
-  max-width: 700px;
+  max-width: 600px;
   margin: 0 auto;
+}
+
+.parameter-card-simple {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.simple-header {
+  margin-bottom: 24px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.param-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.current-badge {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  color: #2e7d32;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
+  border: 1px solid #4caf50;
 }
 
 .parameter-card {
@@ -181,37 +216,46 @@
   min-height: 40px;
 }
 
-.parameter-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.input-wrapper {
+  margin-bottom: 12px;
 }
 
-.parameter-input {
+.parameter-input-large {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
+  padding: 20px 24px;
+  border: 3px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 28px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-weight: 600;
+  font-weight: 700;
   transition: all 0.3s ease;
+  background: #fafafa;
+  text-align: center;
+  color: #333;
+}
+
+.parameter-input-large::placeholder {
+  color: #bbb;
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.parameter-input-large:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.15);
   background: white;
 }
 
-.parameter-input:focus {
-  outline: none;
+.parameter-input-large:hover {
   border-color: #ff6b35;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  background: white;
 }
 
-.parameter-input:hover {
-  border-color: #ff6b35;
-}
-
-.parameter-range-info {
-  font-size: 12px;
-  color: #999;
+.simple-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
@@ -245,7 +289,28 @@
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
-/* 액션 버튼 */
+.info-box {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #e7f3ff;
+  border: 1px solid #2196f3;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.info-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.info-text {
+  color: #1565c0;
+  line-height: 1.5;
+}
+
 .edit-actions {
   display: flex;
   justify-content: center;
@@ -297,44 +362,29 @@
   cursor: not-allowed;
 }
 
-/* 경고 박스 */
-.warning-box {
+.simple-guide {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
   display: flex;
-  gap: 16px;
-  background: #fff3cd;
-  border: 2px solid #ffc107;
-  border-radius: 12px;
-  padding: 20px;
+  align-items: center;
+  gap: 12px;
+  border-left: 4px solid #ff6b35;
 }
 
-.warning-icon {
-  font-size: 32px;
-  line-height: 1;
+.guide-icon {
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
-.warning-content h4 {
-  margin: 0 0 12px 0;
-  color: #856404;
-  font-size: 16px;
-}
-
-.warning-content ul {
-  margin: 0;
-  padding-left: 20px;
-  color: #856404;
-}
-
-.warning-content li {
-  margin-bottom: 6px;
+.guide-text {
   font-size: 14px;
-  line-height: 1.6;
+  color: #555;
+  line-height: 1.5;
 }
 
-.warning-content li:last-child {
-  margin-bottom: 0;
-}
-
-/* 반응형 */
 @media (max-width: 768px) {
   .ai-edit-content {
     padding: 16px;
@@ -357,6 +407,19 @@
     max-width: 100%;
   }
 
+  .parameter-card-simple {
+    padding: 24px;
+  }
+
+  .parameter-input-large {
+    font-size: 24px;
+    padding: 16px 20px;
+  }
+
+  .parameter-input-large::placeholder {
+    font-size: 24px;
+  }
+
   .edit-actions {
     flex-direction: column;
   }
@@ -366,32 +429,29 @@
     width: 100%;
   }
 
-  .warning-box {
-    flex-direction: column;
-    gap: 12px;
-  }
-
   .unsaved-indicator {
     font-size: 12px;
     padding: 6px 12px;
   }
-
-  .change-indicator {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  
+  .simple-guide {
+    padding: 12px 16px;
+  }
+  
+  .guide-text {
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
-  .parameter-header {
+  .header-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
 
-  .parameter-current-value {
-    font-size: 16px;
+  .parameter-input-large {
+    font-size: 20px;
   }
 }
 

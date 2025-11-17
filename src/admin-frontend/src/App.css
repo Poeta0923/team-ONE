@@ -1,10 +1,8 @@
-/* App.css - 전역 앱 스타일 */
 .App {
   min-height: 100vh;
   width: 100%;
 }
 
-/* 페이지 전환 애니메이션 */
 .page-enter {
   opacity: 0;
   transform: translateY(20px);
@@ -27,7 +25,6 @@
   transition: opacity 300ms, transform 300ms;
 }
 
-/* 로딩 스피너 */
 .loading-spinner {
   display: inline-block;
   width: 20px;
@@ -43,7 +40,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* 공통 버튼 스타일 */
 .btn {
   display: inline-block;
   padding: 12px 24px;
@@ -90,7 +86,6 @@
   color: var(--primary-color);
 }
 
-/* 카드 스타일 */
 .card {
   background: white;
   border-radius: 12px;
@@ -103,7 +98,6 @@
   box-shadow: var(--shadow-medium);
 }
 
-/* 폼 스타일 */
 .form-group {
   margin-bottom: 20px;
 }
@@ -135,7 +129,6 @@
   margin-top: 5px;
 }
 
-/* 반응형 그리드 */
 .grid {
   display: grid;
   gap: 20px;

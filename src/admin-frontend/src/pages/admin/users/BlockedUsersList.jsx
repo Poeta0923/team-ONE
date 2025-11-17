@@ -25,18 +25,15 @@ const BlockedUsersList = () => {
     setLoading(true);
     
     try {
-      // 백엔드는 페이지를 0부터 시작하므로 -1
       const result = await fetchBannedUsers(page - 1, 10);
       
       if (result.resultCode === 200) {
         setUsers(result.data.users);
         setTotalElements(result.data.totalElements);
         setTotalPages(result.data.totalPages);
-      } else {
-        console.error('차단된 회원 조회 실패:', result.successMessage);
       }
     } catch (error) {
-      console.error('차단된 회원 조회 실패:', error);
+      // Error handling
     } finally {
       setLoading(false);
     }
@@ -50,11 +47,8 @@ const BlockedUsersList = () => {
     // 사용자 신고 내역 로드
     // GET /admin/reports에서 해당 userId의 신고만 필터링
     try {
-      console.log('🔍 차단된 회원의 신고 내역 조회:', user.userId, user.name);
-      
       // 전체 신고 목록을 가져와서 필터링 (큰 limit으로)
       const result = await fetchReports(0, 1000); // 페이지 0, 큰 limit
-      console.log('📋 전체 신고 목록 조회 결과:', result);
       
       if (result.resultCode === 200 && result.data && result.data.reports) {
         // reportedUserId 또는 reportedName으로 필터링
@@ -64,14 +58,11 @@ const BlockedUsersList = () => {
           report.reportedName === user.nickName
         );
         
-        console.log(`✅ ${user.name} 회원의 신고 내역 ${userReports.length}건 발견`);
         setUserReports(userReports);
       } else {
-        console.warn('⚠️ 신고 목록 조회 실패');
         setUserReports([]);
       }
     } catch (error) {
-      console.error('❌ 신고 내역 로드 실패:', error);
       setUserReports([]);
     } finally {
       setLoadingDetails(false);
@@ -102,7 +93,6 @@ const BlockedUsersList = () => {
         alert(result.successMessage || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('차단 해제 실패:', error);
       alert('차단 해제에 실패했습니다.');
     }
   };

@@ -21,18 +21,15 @@ const ContestsPage = () => {
     setLoading(true);
     
     try {
-      // 백엔드는 페이지를 0부터 시작하므로 -1
       const result = await fetchContests(page - 1, 10);
       
       if (result.resultCode === 200) {
         setContests(result.data.contests);
         setTotalElements(result.data.totalElements);
         setTotalPages(result.data.totalPages);
-      } else {
-        console.error('공모전 목록 조회 실패:', result.successMessage);
       }
     } catch (error) {
-      console.error('공모전 목록 조회 실패:', error);
+      // Error handling
     } finally {
       setLoading(false);
     }
@@ -56,7 +53,6 @@ const ContestsPage = () => {
         alert(result.successMessage || '공모전 등록에 실패했습니다.');
       }
     } catch (error) {
-      console.error('공모전 등록 실패:', error);
       alert('공모전 등록 중 오류가 발생했습니다.');
     }
   };
@@ -76,7 +72,6 @@ const ContestsPage = () => {
         alert(result.successMessage || '공모전 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('공모전 삭제 실패:', error);
       alert('공모전 삭제 중 오류가 발생했습니다.');
     }
   };

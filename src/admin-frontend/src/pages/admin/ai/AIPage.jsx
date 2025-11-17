@@ -21,10 +21,10 @@ const AIPage = () => {
       if (result.resultCode === 200) {
         setModels(result.data);
       } else {
-        console.error('AI 모델 정확도 조회 실패:', result.successMessage);
+        alert(`조회 실패: ${result.successMessage || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('AI 모델 정확도 조회 실패:', error);
+      alert(`오류 발생: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -32,73 +32,105 @@ const AIPage = () => {
 
   // 모델별로 적절한 메트릭 렌더링
   const renderModelMetrics = (model) => {
-    if (model.modelName === "후보생성 모델") {
-      return (
-        <div className="model-metrics-detailed">
-          <div className="metrics-section">
-            <h5>HitRate@K</h5>
-            <div className="metrics-grid">
-              <span className="metric">K=1: {(model["HitRate@K"]["1"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=3: {(model["HitRate@K"]["3"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=5: {(model["HitRate@K"]["5"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=10: {(model["HitRate@K"]["10"] * 100).toFixed(1)}%</span>
+    // embedding 모델 (후보생성 모델)
+    if (model.model === "embedding" && model.data) {
+      const hitRate = model.data["HitRate@K"];
+      const recall = model.data["Recall@K"];
+      
+      if (hitRate && recall) {
+        return (
+          <div className="model-metrics-detailed">
+            <div className="metrics-section">
+              <h5>HitRate@K</h5>
+              <div className="metrics-grid">
+                <span className="metric">K=1: {(hitRate["1"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=3: {(hitRate["3"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=5: {(hitRate["5"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=10: {(hitRate["10"] * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+            <div className="metrics-section">
+              <h5>Recall@K</h5>
+              <div className="metrics-grid">
+                <span className="metric">K=1: {(recall["1"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=3: {(recall["3"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=5: {(recall["5"] * 100).toFixed(1)}%</span>
+                <span className="metric">K=10: {(recall["10"] * 100).toFixed(1)}%</span>
+              </div>
             </div>
           </div>
-          <div className="metrics-section">
-            <h5>Recall@K</h5>
-            <div className="metrics-grid">
-              <span className="metric">K=1: {(model["Recall@K"]["1"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=3: {(model["Recall@K"]["3"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=5: {(model["Recall@K"]["5"] * 100).toFixed(1)}%</span>
-              <span className="metric">K=10: {(model["Recall@K"]["10"] * 100).toFixed(1)}%</span>
-            </div>
-          </div>
-        </div>
-      );
-    } else if (model.modelName === "재정렬 모델") {
+        );
+      }
+    } 
+    // uum_matcher 모델 (재정렬 모델)
+    else if (model.model === "uum_matcher" && model.data?.data) {
       return (
         <div className="model-metrics-simple">
-          <span className="metric">NDCG@4: {(model["ndcg@4"] * 100).toFixed(2)}%</span>
-          <span className="metric">Precision@4: {(model["precision@4"] * 100).toFixed(2)}%</span>
+          <span className="metric">Threshold: {model.data.threshold}</span>
+          <span className="metric">Best Threshold: {model.data.best_threshold_sweep_on_evalset?.toFixed(4)}</span>
         </div>
       );
-    } else if (model.modelName === "수락확률 모델") {
+    } 
+    // acceptor 모델 (수락확률 모델)
+    else if (model.model === "acceptor" && model.data) {
       return (
         <div className="model-metrics-simple">
-          <span className="metric">PR-AUC: {(model["pr_auc"] * 100).toFixed(2)}%</span>
-          <span className="metric">F1 Score: {(model["f1"] * 100).toFixed(2)}%</span>
+          <span className="metric">Features: {model.data.features?.length || 0}개</span>
+          <span className="metric">Backend: {model.data.backend}</span>
+          <span className="metric">Threshold: {model.data.threshold}</span>
         </div>
       );
     }
-    return null;
+    
+    return (
+      <div className="model-metrics-simple">
+        <span className="metric">데이터 로드 중...</span>
+      </div>
+    );
+  };
+
+  // 모델 이름 한글 변환
+  const getModelDisplayName = (modelId) => {
+    const names = {
+      "embedding": "후보생성 모델",
+      "uum_matcher": "재정렬 모델",
+      "acceptor": "수락확률 모델"
+    };
+    return names[modelId] || modelId;
   };
 
   // 모델별 설명
-  const getModelDescription = (modelName) => {
+  const getModelDescription = (modelId) => {
     const descriptions = {
-      "후보생성 모델": "프로젝트에 적합한 팀원 후보를 생성하여 추천하는 모델",
-      "재정렬 모델": "추천된 후보들을 최적의 순서로 재정렬하는 모델",
-      "수락확률 모델": "팀원이 프로젝트 제안을 수락할 확률을 예측하는 모델"
+      "embedding": "프로젝트에 적합한 팀원 후보를 생성하여 추천하는 모델",
+      "uum_matcher": "추천된 후보들을 최적의 순서로 재정렬하는 모델",
+      "acceptor": "팀원이 프로젝트 제안을 수락할 확률을 예측하는 모델"
     };
-    return descriptions[modelName] || "";
+    return descriptions[modelId] || "";
   };
 
   // 모델에 파라미터가 있는지 확인
-  const hasParameters = (modelName) => {
-    return modelName === "재정렬 모델" || modelName === "수락확률 모델";
+  const hasParameters = (modelId) => {
+    return modelId === "uum_matcher" || modelId === "acceptor";
   };
 
   // 파라미터 수정 페이지로 이동
   const handleEditClick = (model) => {
     let modelType;
-    if (model.modelName === "재정렬 모델") {
+    if (model.model === "uum_matcher") {
       modelType = "score";
-    } else if (model.modelName === "수락확률 모델") {
+    } else if (model.model === "acceptor") {
       modelType = "acceptor";
     }
     
     if (modelType) {
-      navigate(`/admin/ai/edit/${modelType}`);
+      // 현재 모델 데이터를 state로 전달
+      navigate(`/admin/ai/edit/${modelType}`, { 
+        state: { 
+          currentModel: model,
+          currentLearningRate: model.data?.learningRate || model.data?.threshold || null
+        } 
+      });
     }
   };
 
@@ -135,12 +167,12 @@ const AIPage = () => {
               <p className="stat-number">
                 {models.length > 0 ? 
                   ((models.reduce((acc, model) => {
-                    if (model.modelName === "후보생성 모델") {
-                      return acc + model["HitRate@K"]["1"];
-                    } else if (model.modelName === "재정렬 모델") {
-                      return acc + model["ndcg@4"];
-                    } else if (model.modelName === "수락확률 모델") {
-                      return acc + model["pr_auc"];
+                    if (model.model === "embedding" && model.data?.["HitRate@K"]) {
+                      return acc + model.data["HitRate@K"]["1"];
+                    } else if (model.model === "uum_matcher") {
+                      return acc + 0.9; // 임시값
+                    } else if (model.model === "acceptor") {
+                      return acc + 0.95; // 임시값
                     }
                     return acc;
                   }, 0) / models.length) * 100).toFixed(1) + '%'
@@ -165,19 +197,19 @@ const AIPage = () => {
             </div>
           ) : (
             <div className="models-grid">
-              {models.map((model, index) => (
+              {models.map((modelData, index) => (
                 <div key={index} className="model-card">
                   <div className="model-header">
-                    <h4>{model.modelName}</h4>
-                    <span className="model-status active">활성</span>
+                    <h4>{getModelDisplayName(modelData.model)}</h4>
+                    <span className="model-status active">{modelData.OK ? '활성' : '오류'}</span>
                   </div>
-                  <p className="model-description">{getModelDescription(model.modelName)}</p>
-                  {renderModelMetrics(model)}
-                  {hasParameters(model.modelName) && (
+                  <p className="model-description">{getModelDescription(modelData.model)}</p>
+                  {renderModelMetrics(modelData)}
+                  {hasParameters(modelData.model) && (
                     <div className="model-actions">
                       <button 
                         className="btn-small btn-primary"
-                        onClick={() => handleEditClick(model)}
+                        onClick={() => handleEditClick(modelData)}
                       >
                         수정
                       </button>

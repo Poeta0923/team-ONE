@@ -29,18 +29,14 @@ const ReportedUsersList = () => {
     try {
       const result = await fetchReports(page - 1, 10);
       
-      console.log('신고받은 회원 응답:', result);
-      
       if (result.resultCode === 200) {
         setReports(result.data.reports || []);
         setTotalElements(result.data.totalElements || 0);
         setTotalPages(result.data.totalPages || 1);
       } else {
-        console.error('신고 내역 조회 실패:', result);
         alert(`신고 내역 조회 실패: ${result.successMessage || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('신고 내역 조회 에러:', error);
       alert('신고 내역 조회 중 오류가 발생했습니다. 다시 로그인해주세요.');
     } finally {
       setLoading(false);
@@ -56,8 +52,6 @@ const ReportedUsersList = () => {
     
     
     if (report.reportedUserStatus) {
-      // 백엔드가 reportedUserStatus 추가한 경우
-      console.log('✅ 신고 데이터에 회원 상태 포함:', report.reportedUserStatus);
       setUserDetails({
         userId: report.reportedUserId,
         name: report.reportedName,
@@ -68,16 +62,12 @@ const ReportedUsersList = () => {
     } else {
       // reportedUserStatus가 없는 경우 - 블랙리스트 API로 확인
       try {
-        console.log('⚡ 블랙리스트 API로 회원 상태 확인 중...');
-        
         // 차단된 회원 목록 가져오기 (큰 limit으로 전체 조회)
         const bannedResult = await fetchBannedUsers(0, 1000);
         
         if (bannedResult.resultCode === 200 && bannedResult.data && bannedResult.data.users) {
           // 차단된 회원 목록에서 해당 userId 찾기
           const isBanned = bannedResult.data.users.some(u => u.userId === report.reportedUserId);
-          
-          console.log('✅ 블랙리스트 확인 완료:', isBanned ? '차단됨' : '활성');
           
           setUserDetails({
             userId: report.reportedUserId,
@@ -86,7 +76,6 @@ const ReportedUsersList = () => {
             status: isBanned ? 'banned' : 'active'
           });
         } else {
-          console.warn('⚠️ 블랙리스트 조회 실패 - 기본값 사용');
           setUserDetails({
             userId: report.reportedUserId,
             name: report.reportedName,
@@ -95,7 +84,6 @@ const ReportedUsersList = () => {
           });
         }
       } catch (error) {
-        console.error('❌ 블랙리스트 API 호출 에러:', error);
         // 에러 시에도 기본 정보로 설정
         setUserDetails({
           userId: report.reportedUserId,
@@ -135,7 +123,6 @@ const ReportedUsersList = () => {
         alert(result.successMessage || '신고 상태 변경에 실패했습니다.');
       }
     } catch (error) {
-      console.error('신고 상태 변경 실패:', error);
       alert('신고 상태 변경에 실패했습니다.');
     }
   };
@@ -165,7 +152,6 @@ const ReportedUsersList = () => {
         alert(result.successMessage || '회원 차단에 실패했습니다.');
       }
     } catch (error) {
-      console.error('회원 차단 실패:', error);
       alert('회원 차단에 실패했습니다.');
     }
   };
@@ -188,7 +174,6 @@ const ReportedUsersList = () => {
         alert(result.successMessage || '차단 해제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('차단 해제 실패:', error);
       alert('차단 해제에 실패했습니다.');
     }
   };

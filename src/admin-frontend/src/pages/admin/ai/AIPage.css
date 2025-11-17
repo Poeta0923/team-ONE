@@ -137,7 +137,6 @@
   gap: 5px;
 }
 
-/* 새로운 메트릭 스타일 */
 .model-metrics-detailed {
   display: flex;
   flex-direction: column;
@@ -235,7 +234,6 @@
   background-color: #e55a2b;
 }
 
-/* 모달 스타일 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -297,7 +295,6 @@
   padding: 24px;
 }
 
-/* 파라미터 섹션 */
 .parameters-section {
   margin-bottom: 20px;
 }

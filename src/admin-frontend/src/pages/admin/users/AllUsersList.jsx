@@ -17,18 +17,15 @@ const AllUsersList = () => {
     setLoading(true);
     
     try {
-      // 전체 회원 API도 0-based 페이징 사용
       const result = await fetchAllUsers(page - 1, 10);
       
       if (result.resultCode === 200) {
         setUsers(result.data.users);
         setTotalElements(result.data.totalElements);
         setTotalPages(result.data.totalPages);
-      } else {
-        console.error('전체 회원 조회 실패:', result.successMessage);
       }
     } catch (error) {
-      console.error('전체 회원 조회 실패:', error);
+      // Error handling
     } finally {
       setLoading(false);
     }

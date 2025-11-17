@@ -79,14 +79,13 @@
   font-size: 0.95rem;
 }
 
-/* 전체 회원 테이블 컬럼 너비 */
-.users-table th:nth-child(1) { width: 8%; }   /* 이름 */
-.users-table th:nth-child(2) { width: 10%; }  /* 닉네임 */
-.users-table th:nth-child(3) { width: 20%; }  /* 주요스택 */
-.users-table th:nth-child(4) { width: 13%; }  /* 전화번호 */
-.users-table th:nth-child(5) { width: 11%; }  /* 생일 */
-.users-table th:nth-child(6) { width: 20%; }  /* 거주지 */
-.users-table th:nth-child(7) { width: 10%; }  /* 더보기/관리 */
+.users-table th:nth-child(1) { width: 8%; }   
+.users-table th:nth-child(2) { width: 10%; }  
+.users-table th:nth-child(3) { width: 20%; }  
+.users-table th:nth-child(4) { width: 13%; }  
+.users-table th:nth-child(5) { width: 11%; }  
+.users-table th:nth-child(6) { width: 20%; }  
+.users-table th:nth-child(7) { width: 10%; }  
 
 .users-table td {
   padding: 12px 16px;
@@ -216,7 +215,6 @@
   color: #155724;
 }
 
-/* 모달 스타일 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -493,7 +491,6 @@
   text-align: center;
 }
 
-/* 반응형 */
 @media (max-width: 768px) {
   .modal-content {
     width: 95%;

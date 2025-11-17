@@ -59,10 +59,9 @@
   font-size: 0.95rem;
 }
 
-/* 공모전 테이블 컬럼 너비 */
-.contests-table th:nth-child(1) { width: 12%; }  /* 번호 */
-.contests-table th:nth-child(2) { width: 68%; }  /* 공모전 이름 */
-.contests-table th:nth-child(3) { width: 10%; }  /* 관리 */
+.contests-table th:nth-child(1) { width: 12%; }  
+.contests-table th:nth-child(2) { width: 68%; }  
+.contests-table th:nth-child(3) { width: 10%; }  
 
 .contests-table td {
   padding: 12px 16px;

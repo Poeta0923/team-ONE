@@ -25,7 +25,6 @@ const DashboardPage = () => {
       }
     } catch (err) {
       setError('대시보드 데이터를 불러오는 중 오류가 발생했습니다.');
-      console.error('Dashboard load error:', err);
     } finally {
       setLoading(false);
     }
