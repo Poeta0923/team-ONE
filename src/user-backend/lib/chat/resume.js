@@ -168,21 +168,36 @@ module.exports = {
                     messageId,
                     roomId,
                     userId,
-                    content: resumePayload,  // 객체 그대로 전송
+                    content: resumePayload,
                     contentType: 'resume',
                     date: new Date().toISOString()
                 };
+
+                // [LOG] 브로드캐스트 메시지 기록
+                logger.info(
+                    `[WS-RESUME] Broadcasting to Room ${roomId}: ${JSON.stringify(broadcastPayload)}`
+                );
 
                 await wsManager.broadcastMessageToRoom(roomId, broadcastPayload);
 
                 logger.info(`[WS-RESUME] Resume message sent. Message ID: ${messageId}`);
 
-                // 클라이언트에게 성공 응답
+                // -------------------------
+                // 6) 클라이언트에게 성공 응답
+                // -------------------------
+
+                const successResponse = {
+                    status: 'success',
+                    sentMessage: broadcastPayload
+                };
+
+                // [LOG] 실제 클라이언트에게 전송된 WebSocket 메시지 기록
+                logger.info(
+                    `[WS-RESUME] WS Send to User(${userId}): ${JSON.stringify(successResponse)}`
+                );
+
                 try {
-                    ws.send(JSON.stringify({
-                        status: 'success',
-                        sentMessage: broadcastPayload
-                    }));
+                    ws.send(JSON.stringify(successResponse));
                 } catch (_) {}
 
             } catch (e) {

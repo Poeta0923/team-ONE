@@ -40,7 +40,7 @@ module.exports = {
         const userId = req.user.userId; // ⭐ userId 사용
         
         // [1-2] 현재 신고 내용 추출
-        const reported = req.body.reportedId;
+        const reported = req.body.reported;
         const reason = req.body.reason;
 
         logger.info(`[Report] 사용자 ID: ${userId}의 신고 접수 시작 (Reported: ${reported})`);
