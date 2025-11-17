@@ -2,7 +2,6 @@ package com.teammatching.admin.system.service;
 
 import com.teammatching.admin.system.domain.AiModel;
 import com.teammatching.admin.system.dto.AiModelLearningRateRequest;
-//import com.teammatching.admin.system.dto.FastApiStatsDto;
 import com.teammatching.admin.system.repository.AiModelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList; // 2. ArrayList, List 임포트
+import java.util.List;
+
 @RequiredArgsConstructor
 @Transactional
 @Service
@@ -20,36 +22,57 @@ public class SystemAdminService {
     private final RestTemplate restTemplate;
     private final AiModelRepository aiModelRepository;
 
-    // --- AI 서버 주소 주입 ---
-    @Value("${ai.fastapi.url.stats}")
-    private String fastApiStatsUrl;
 
-    @Value("${ai.fastapi.url.parameter.score}")
-    private String fastApiScoreUrl;
+    @Value("${ai.fastapi.url.scorer}")
+    private String fastApiScorerUrl;
 
-    @Value("${ai.fastapi.url.parameter.acceptor}")
+    @Value("${ai.fastapi.url.acceptor}")
     private String fastApiAcceptorUrl;
 
-    // AI 모델 정확도 조회 기능
-    @Transactional(readOnly = true)
-    public Object[] getAiModelStats() {
-        try {
-            return restTemplate.getForObject(fastApiStatsUrl, Object[].class);
-        } catch (RestClientException e) {
-            System.err.println("AI 서버(" + fastApiStatsUrl + ") 연결 실패: " + e.getMessage());
-            return new Object[0];
-        }
-    }
+    @Value("${ai.fastapi.url.embedding}")
+    private String fastApiEmbeddingUrl;
 
+    // (수정용 URL 주입)
+    @Value("${ai.fastapi.url.parameter.score}")
+    private String fastApiScoreUpdateUrl;
+
+    @Value("${ai.fastapi.url.parameter.acceptor}")
+    private String fastApiAcceptorUpdateUrl;
+
+    /**
+     * (수정!) 3개의 AI 모델 API를 각각 호출하여, 그 결과를 하나의 List로 합쳐 반환합니다.
+     */
+    @Transactional(readOnly = true)
+    // 4. (핵심!) 반환 타입을 'List<Object>'로 변경
+    public List<Object> getAiModelStats() {
+        List<Object> allStats = new ArrayList<>();
+
+        try {
+            // 5. (핵심!) 3개의 API를 각각 호출하고, Object.class로 응답을 받음
+            // (RestTemplate이 JSON 구조를 모르므로, 가장 일반적인 Object로 받음)
+            Object scorerStats = restTemplate.getForObject(fastApiScorerUrl, Object.class);
+            Object acceptorStats = restTemplate.getForObject(fastApiAcceptorUrl, Object.class);
+            Object embeddingStats = restTemplate.getForObject(fastApiEmbeddingUrl, Object.class);
+
+            // 6. 3개의 결과를 하나의 리스트에 추가
+            allStats.add(scorerStats);
+            allStats.add(acceptorStats);
+            allStats.add(embeddingStats);
+
+        } catch (RestClientException e) {
+            System.err.println("AI 서버 3개 모델 중 하나 연결 실패: " + e.getMessage());
+            // 7. (임시) 실패 시 빈 리스트 반환
+            return new ArrayList<>();
+        }
+
+        return allStats;
+    }
 
     /**
      * [재정렬 모델] 파라미터를 수정합니다.
      */
     public AiModel updateScoreModel(AiModelLearningRateRequest request) {
-        // 1. FastAPI 서버에 '적용' 요청
-        sendParametersToFastApi(fastApiScoreUrl, request);
-
-        // 2. DB에 '저장' (모델 이름을 "재정렬 모델"로 하드코딩)
+        sendParametersToFastApi(fastApiScoreUpdateUrl, request);
         return findOrCreateAndSave("재정렬 모델", request.getLearningRate());
     }
 
@@ -57,10 +80,7 @@ public class SystemAdminService {
      * [수락확률 모델] 파라미터를 수정합니다.
      */
     public AiModel updateAcceptorModel(AiModelLearningRateRequest request) {
-        // 1. FastAPI 서버에 '적용' 요청
-        sendParametersToFastApi(fastApiAcceptorUrl, request);
-
-        // 2. DB에 '저장' (모델 이름을 "수락확률 모델"로 하드코딩)
+        sendParametersToFastApi(fastApiAcceptorUpdateUrl, request);
         return findOrCreateAndSave("수락확률 모델", request.getLearningRate());
     }
 
@@ -69,13 +89,10 @@ public class SystemAdminService {
      */
     private void sendParametersToFastApi(String url, AiModelLearningRateRequest request) {
         try {
-            // (참고: FastAPI가 { "learningRate": 0.0005 } 형식만 받으므로
-            //       AiModelParametersRequest 대신 AiModelLearningRateRequest를 보냅니다.)
             HttpEntity<AiModelLearningRateRequest> entity = new HttpEntity<>(request);
             restTemplate.put(url, entity);
         } catch (RestClientException e) {
             System.err.println("AI 서버(" + url + ") 파라미터 적용 실패: " + e.getMessage());
-            // (AI 서버가 죽어도 DB 저장은 진행되도록 예외를 로깅만 합니다.)
         }
     }
 
@@ -83,18 +100,11 @@ public class SystemAdminService {
      * (공통 로직) DB에서 모델을 찾거나, 새로 생성하여 파라미터를 저장(업데이트)합니다.
      */
     private AiModel findOrCreateAndSave(String modelName, Double learningRate) {
-        // DB에서 모델 이름으로 검색
         AiModel aiModel = aiModelRepository.findByModelName(modelName)
-                .orElse(null); // 없으면 null
+                .orElse(AiModel.of(modelName, learningRate)); // 없으면 'of' 팩토리 메소드로 생성
 
-        if (aiModel == null) {
-            // 1. (신규) AiModel.of() 팩토리 메소드 사용
-            aiModel = AiModel.of(modelName, learningRate);
-        } else {
-            // 2. (업데이트) 엔티티 필드 업데이트
-            aiModel.setModelName(modelName);
-            aiModel.setLearningRate(learningRate);
-        }
+        aiModel.setModelName(modelName);
+        aiModel.setLearningRate(learningRate);
 
         return aiModelRepository.save(aiModel);
     }
