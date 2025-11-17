@@ -43,7 +43,7 @@ const sqlGetMessages = `
     FROM message M
     JOIN users U ON M.userId = U.userId
     WHERE M.roomId = ?
-    ORDER BY M.messageId DESC, M.date DESC
+    ORDER BY M.messageId ASC, M.date ASC
     LIMIT ? OFFSET ?;
 `;
 
