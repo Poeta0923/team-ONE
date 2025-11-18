@@ -49,7 +49,7 @@ public class SystemAdminController {
     /**
      * [수락확률 모델] 파라미터 수정 API
      */
-    @PutMapping("/ai-model/parameter/acceptor")
+    @PutMapping("woo")
     public ApiResponse<AiModelParametersResponse> updateAcceptorModelParameters(
             @RequestBody @Valid AiModelLearningRateRequest request
     ) {
