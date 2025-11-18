@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "1. 관리자 인증 API", description = "로그인/로그아웃 API")
 @RequiredArgsConstructor
-//@RequestMapping("/admin")
+@RequestMapping("/admin")
 @RestController
 public class AuthController {
 
@@ -50,7 +50,7 @@ public class AuthController {
 
     // 로그아웃 API
     @Operation(summary = "관리자 로그아웃", description = "현재 로그인된 관리자를 로그아웃 처리합니다. (Authorization 헤더에 토큰 필요)")
-    @PostMapping("/admin/logout")
+    @PostMapping("/logout")
     public ApiResponse<Void> logout() {
         // Request Header에서 토큰을 꺼내와서 AuthService.logout()에 전달
         authService.logout(null);
