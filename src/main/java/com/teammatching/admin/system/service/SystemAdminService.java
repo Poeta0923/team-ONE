@@ -40,7 +40,7 @@ public class SystemAdminService {
     private String fastApiAcceptorUpdateUrl;
 
     /**
-     * (수정!) 3개의 AI 모델 API를 각각 호출하여, 그 결과를 하나의 List로 합쳐 반환합니다.
+     * 3개의 AI 모델 API를 각각 호출하여, 그 결과를 하나의 List로 합쳐 반환
      */
     @Transactional(readOnly = true)
     // 4. (핵심!) 반환 타입을 'List<Object>'로 변경
@@ -48,20 +48,20 @@ public class SystemAdminService {
         List<Object> allStats = new ArrayList<>();
 
         try {
-            // 5. (핵심!) 3개의 API를 각각 호출하고, Object.class로 응답을 받음
-            // (RestTemplate이 JSON 구조를 모르므로, 가장 일반적인 Object로 받음)
+            // 3개의 API를 각각 호출하고, Object.class로 응답을 받음
+            // RestTemplate이 JSON 구조를 모르므로, 가장 일반적인 Object로 받음
             Object scorerStats = restTemplate.getForObject(fastApiScorerUrl, Object.class);
             Object acceptorStats = restTemplate.getForObject(fastApiAcceptorUrl, Object.class);
             Object embeddingStats = restTemplate.getForObject(fastApiEmbeddingUrl, Object.class);
 
-            // 6. 3개의 결과를 하나의 리스트에 추가
+            // 3개의 결과를 하나의 리스트에 추가
             allStats.add(scorerStats);
             allStats.add(acceptorStats);
             allStats.add(embeddingStats);
 
         } catch (RestClientException e) {
             System.err.println("AI 서버 3개 모델 중 하나 연결 실패: " + e.getMessage());
-            // 7. (임시) 실패 시 빈 리스트 반환
+            // 실패 시 빈 리스트 반환
             return new ArrayList<>();
         }
 
@@ -69,7 +69,7 @@ public class SystemAdminService {
     }
 
     /**
-     * [재정렬 모델] 파라미터를 수정합니다.
+     * [재정렬 모델] 파라미터를 수정
      */
     public AiModel updateScoreModel(AiModelLearningRateRequest request) {
         sendParametersToFastApi(fastApiScoreUpdateUrl, request);
@@ -77,7 +77,7 @@ public class SystemAdminService {
     }
 
     /**
-     * [수락확률 모델] 파라미터를 수정합니다.
+     * [수락확률 모델] 파라미터를 수정
      */
     public AiModel updateAcceptorModel(AiModelLearningRateRequest request) {
         sendParametersToFastApi(fastApiAcceptorUpdateUrl, request);
@@ -85,7 +85,7 @@ public class SystemAdminService {
     }
 
     /**
-     * (공통 로직) FastAPI 서버에 파라미터를 PUT 요청으로 전송합니다.
+     * (공통 로직) FastAPI 서버에 파라미터를 PUT 요청으로 전송
      */
     private void sendParametersToFastApi(String url, AiModelLearningRateRequest request) {
         try {
@@ -97,7 +97,7 @@ public class SystemAdminService {
     }
 
     /**
-     * (공통 로직) DB에서 모델을 찾거나, 새로 생성하여 파라미터를 저장(업데이트)합니다.
+     * (공통 로직) DB에서 모델을 찾거나, 새로 생성하여 파라미터를 저장(업데이트)
      */
     private AiModel findOrCreateAndSave(String modelName, Double learningRate) {
         AiModel aiModel = aiModelRepository.findByModelName(modelName)
