@@ -8,7 +8,7 @@ export const USE_MOCK_API = false;
 
 // API 기본 설정
 const getApiBaseUrl = () => {
-  return 'http://ceprj.gachon.ac.kr:60002';
+  return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
