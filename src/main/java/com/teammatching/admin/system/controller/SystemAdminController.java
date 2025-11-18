@@ -8,8 +8,6 @@ import com.teammatching.admin.system.service.SystemAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -49,7 +47,7 @@ public class SystemAdminController {
     /**
      * [수락확률 모델] 파라미터 수정 API
      */
-    @PutMapping("woo")
+    @PutMapping("/ai-model/parameter/acceptor")
     public ApiResponse<AiModelParametersResponse> updateAcceptorModelParameters(
             @RequestBody @Valid AiModelLearningRateRequest request
     ) {
