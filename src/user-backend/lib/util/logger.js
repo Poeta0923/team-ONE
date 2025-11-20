@@ -37,7 +37,7 @@ const logger = winston.createLogger({
         // 로그 기록 시간 형식 지정
         timestamp({format : 'YYYY-MM-DD HH:mm:ss'}),
         // 애플리케이션 식별을 위한 레이블 지정
-        label({label : 'bookCalander 관리자 어플리케이션'}),
+        label({label : 'team-ONE 어플리케이션'}),
         // 위에서 정의한 최종 출력 포맷 적용
         logFormat,
     ),
