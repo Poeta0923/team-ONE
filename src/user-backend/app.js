@@ -35,9 +35,6 @@ app.use('/uploads', express.static(uploadDir));
 // 2. Middleware
 // =================================================================
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-
 app.get('/favicon.ico', (req, res) => res.status(404).end());
 
 // =================================================================
@@ -131,11 +128,12 @@ app.use(
     createProxyMiddleware({
         target: `http://localhost:${SPRING_BOOT_INTERNAL_PORT}`,
         changeOrigin: true,
-        pathRewrite: { '^/admin': '/admin' },
+        pathRewrite: {
+            '^/': '/admin/'
+        },
         onProxyReq: (proxyReq, req, res) => {
             logger.info(`→ Proxying Request to Spring Boot: ${req.method} ${req.originalUrl}`);
         },
-        // 🔥 응답 감지 로직 추가 (응답 상태 코드 로깅)
         onProxyRes: (proxyRes, req, res) => {
             logger.info(`⬅️ Response Status from Spring Boot: ${proxyRes.statusCode} for ${req.originalUrl}`);
         },
@@ -147,7 +145,11 @@ app.use(
             });
         }
     })
+
 );
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // =================================================================
 // 6. Node.js API Routes (로컬 API)
