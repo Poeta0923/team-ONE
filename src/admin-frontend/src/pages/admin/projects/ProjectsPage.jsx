@@ -93,39 +93,41 @@ const ProjectsPage = () => {
             <h2>프로젝트 관리</h2>
           </div>
 
-          <table className="projects-table">
-            <thead>
-              <tr>
-                <th>프로젝트 이름</th>
-                <th>프로젝트 유형</th>
-                <th>카테고리</th>
-                <th>상태</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map(project => (
-                <tr key={project.projectId}>
-                  <td>{project.name}</td>
-                  <td>{project.type}</td>
-                  <td>{project.category}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(project.statement)}`}>
-                      {project.statement}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDelete(project.projectId, project.name)}
-                    >
-                      삭제하기
-                    </button>
-                  </td>
+          <div className="table-wrapper">
+            <table className="projects-table">
+              <thead>
+                <tr>
+                  <th>프로젝트 이름</th>
+                  <th>프로젝트 유형</th>
+                  <th>카테고리</th>
+                  <th>상태</th>
+                  <th>관리</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {projects.map(project => (
+                  <tr key={project.projectId}>
+                    <td>{project.name}</td>
+                    <td>{project.type}</td>
+                    <td>{project.category}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(project.statement)}`}>
+                        {project.statement}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="delete-button"
+                        onClick={() => handleDelete(project.projectId, project.name)}
+                      >
+                        삭제하기
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <Pagination
             currentPage={currentPage}

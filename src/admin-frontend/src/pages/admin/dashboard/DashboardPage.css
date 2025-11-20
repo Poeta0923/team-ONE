@@ -1,7 +1,7 @@
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
   gap: 30px;
   padding: 20px;
 }
@@ -12,6 +12,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 25px;
   transition: transform 0.3s ease;
+  min-width: 0;
 }
 
 .dashboard-section:hover {
@@ -25,11 +26,13 @@
   margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 1px solid #e1e5e9;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .section-header h3 {
   color: #333;
-  font-size: 20px;
+  font-size: clamp(16px, 3vw, 20px);
   font-weight: 600;
   margin: 0;
 }
@@ -237,30 +240,61 @@
   color: #721c24;
 }
 
-@media (max-width: 1200px) {
+/* 큰 화면 */
+@media (min-width: 1200px) {
   .dashboard-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+/* 태블릿 크기 */
+@media (max-width: 1024px) {
   .dashboard-content {
+    grid-template-columns: 1fr;
+    gap: 25px;
     padding: 15px;
-    gap: 20px;
   }
 
   .dashboard-section {
     padding: 20px;
   }
+}
+
+/* 작은 태블릿 */
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 12px;
+    gap: 15px;
+  }
+
+  .dashboard-section {
+    padding: 15px;
+  }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+  }
+
+  .section-header h3 {
+    font-size: 16px;
+  }
+
+  .change-indicator {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .view-all-link {
+    font-size: 13px;
   }
 
   .chart-placeholder {
     height: 150px;
+    font-size: 14px;
   }
 
   .temp-chart {
@@ -269,6 +303,37 @@
 
   .chart-bar {
     width: 15px;
+  }
+
+  .list-item {
+    padding: 12px 0;
+  }
+
+  .item-info h4 {
+    font-size: 14px;
+  }
+
+  .item-info p {
+    font-size: 13px;
+  }
+
+  .user-card {
+    min-width: 130px;
+    padding: 15px;
+  }
+
+  .user-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .user-name {
+    font-size: 14px;
+  }
+
+  .user-role {
+    font-size: 12px;
   }
 }
 
@@ -325,34 +390,92 @@
   background-color: #e55a2b;
 }
 
+/* 모바일 */
 @media (max-width: 480px) {
+  .dashboard-content {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .dashboard-section {
+    padding: 12px;
+  }
+
+  .section-header {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section-header h3 {
+    font-size: 15px;
+  }
+
+  .change-indicator {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .view-all-link {
+    font-size: 12px;
+  }
+
   .list-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .item-info h4 {
+    font-size: 13px;
+  }
+
+  .item-info p {
+    font-size: 12px;
   }
 
   .chart-placeholder {
     height: 120px;
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .temp-chart {
+    height: 80px;
+    gap: 6px;
+  }
+
+  .chart-bar {
+    width: 12px;
   }
 
   .user-card {
-    min-width: 120px;
-    padding: 15px;
+    min-width: 110px;
+    padding: 12px;
   }
 
   .user-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+    margin-bottom: 10px;
   }
 
   .user-name {
-    font-size: 14px;
+    font-size: 13px;
+    margin-bottom: 6px;
   }
 
   .user-role {
-    font-size: 12px;
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .user-date {
+    font-size: 11px;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 10px;
   }
 }

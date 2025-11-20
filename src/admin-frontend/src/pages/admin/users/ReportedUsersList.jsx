@@ -212,41 +212,43 @@ const ReportedUsersList = () => {
 
   return (
     <div>
-      <table className="users-table">
-        <thead>
-          <tr>
-            <th>신고한 사람</th>
-            <th>피신고자</th>
-            <th>신고시간</th>
-            <th>신고사유</th>
-            <th>상태</th>
-            <th>신고정보</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reports.map(report => (
-            <tr key={report.reportId}>
-              <td>{report.reporterName}</td>
-              <td>{report.reportedName}</td>
-              <td>{formatDateTime(report.createdAt)}</td>
-              <td>{report.reason}</td>
-              <td>
-                <span className={`status-badge status-${report.status}`}>
-                  {getStatusLabel(report.status)}
-                </span>
-              </td>
-              <td>
-                <button
-                  className="more-button"
-                  onClick={() => handleMoreClick(report)}
-                >
-                  더보기
-                </button>
-              </td>
+      <div className="table-wrapper">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>신고한 사람</th>
+              <th>피신고자</th>
+              <th>신고시간</th>
+              <th>신고사유</th>
+              <th>상태</th>
+              <th>신고정보</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {reports.map(report => (
+              <tr key={report.reportId}>
+                <td>{report.reporterName}</td>
+                <td>{report.reportedName}</td>
+                <td>{formatDateTime(report.createdAt)}</td>
+                <td>{report.reason}</td>
+                <td>
+                  <span className={`status-badge status-${report.status}`}>
+                    {getStatusLabel(report.status)}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    className="more-button"
+                    onClick={() => handleMoreClick(report)}
+                  >
+                    더보기
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination
         currentPage={currentPage}

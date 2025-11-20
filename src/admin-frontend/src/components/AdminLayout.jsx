@@ -6,6 +6,7 @@ import './AdminLayout.css';
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const [currentMenu, setCurrentMenu] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const path = location.pathname;
@@ -24,6 +25,18 @@ const AdminLayout = ({ children }) => {
     }
   }, [location.pathname]);
 
+  // 화면 크기 변경 시 사이드바 닫기
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const menuItems = [
     { id: 'dashboard', label: '대시보드' },
     { id: 'users', label: '회원 관리' },
@@ -32,16 +45,38 @@ const AdminLayout = ({ children }) => {
     { id: 'ai', label: 'AI 관리' }
   ];
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="admin-layout">
       <AdminSidebar 
         activeMenu={currentMenu} 
-        onMenuChange={setCurrentMenu} 
+        onMenuChange={setCurrentMenu}
+        isOpen={sidebarOpen}
+        onClose={closeSidebar}
       />
+
+      {/* 모바일 오버레이 */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={closeSidebar}></div>
+      )}
 
       <main className="main-content">
         <header className="content-header">
-          <h1>{menuItems.find(item => item.id === currentMenu)?.label}</h1>
+          <div className="header-left">
+            <button className="hamburger-btn" onClick={toggleSidebar} aria-label="메뉴 열기">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <h1>{menuItems.find(item => item.id === currentMenu)?.label}</h1>
+          </div>
           <div className="user-info">
             <span>관리자님, 안녕하세요!</span>
           </div>

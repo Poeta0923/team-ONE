@@ -46,30 +46,32 @@ const AllUsersList = () => {
 
   return (
     <div>
-      <table className="users-table">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>닉네임</th>
-            <th>주요스택</th>
-            <th>전화번호</th>
-            <th>생일</th>
-            <th>거주지</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user, index) => (
-            <tr key={`${user.nickName}-${user.phoneNumber}-${index}`}>
-              <td>{user.name}</td>
-              <td>{user.nickName}</td>
-              <td>{user.techStack}</td>
-              <td>{user.phoneNumber}</td>
-              <td>{user.birth}</td>
-              <td>{user.address}</td>
+      <div className="table-wrapper">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>닉네임</th>
+              <th>주요스택</th>
+              <th>전화번호</th>
+              <th>생일</th>
+              <th>거주지</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((user, index) => (
+              <tr key={`${user.nickName}-${user.phoneNumber}-${index}`}>
+                <td>{user.name}</td>
+                <td>{user.nickName}</td>
+                <td>{user.techStack}</td>
+                <td>{user.phoneNumber}</td>
+                <td>{user.birth}</td>
+                <td>{user.address}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination
         currentPage={currentPage}

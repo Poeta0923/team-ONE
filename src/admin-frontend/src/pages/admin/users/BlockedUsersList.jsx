@@ -123,35 +123,37 @@ const BlockedUsersList = () => {
 
   return (
     <div>
-      <table className="users-table">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>닉네임</th>
-            <th>차단일자</th>
-            <th>차단사유</th>
-            <th>신고정보</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user, index) => (
-            <tr key={`${user.nickName}-${user.name}-${index}`}>
-              <td>{user.name}</td>
-              <td>{user.nickName}</td>
-              <td>{formatDateTime(user.updatedAt)}</td>
-              <td>{user.reason}</td>
-              <td>
-                <button
-                  className="more-button"
-                  onClick={() => handleMoreClick(user)}
-                >
-                  더보기
-                </button>
-              </td>
+      <div className="table-wrapper">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>닉네임</th>
+              <th>차단일자</th>
+              <th>차단사유</th>
+              <th>신고정보</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((user, index) => (
+              <tr key={`${user.nickName}-${user.name}-${index}`}>
+                <td>{user.name}</td>
+                <td>{user.nickName}</td>
+                <td>{formatDateTime(user.updatedAt)}</td>
+                <td>{user.reason}</td>
+                <td>
+                  <button
+                    className="more-button"
+                    onClick={() => handleMoreClick(user)}
+                  >
+                    더보기
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination
         currentPage={currentPage}

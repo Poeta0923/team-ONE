@@ -2,6 +2,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #f8f9fa;
+  position: relative;
 }
 
 .main-content {
@@ -9,6 +10,7 @@
   margin-left: 280px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .content-header {
@@ -18,40 +20,86 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .content-header h1 {
   color: #333;
-  font-size: 28px;
+  font-size: clamp(20px, 4vw, 28px);
   font-weight: bold;
   margin: 0;
 }
 
 .user-info {
   color: #666;
-  font-size: 16px;
+  font-size: clamp(14px, 2vw, 16px);
 }
 
 .content-body {
   flex: 1;
   padding: 30px;
+  overflow-x: hidden;
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
+/* 햄버거 메뉴 버튼 */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+}
 
+.hamburger-btn span {
+  width: 100%;
+  height: 3px;
+  background: #ff6b35;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn:hover span {
+  background: #e55a2b;
+}
+
+/* 사이드바 오버레이 (모바일) */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 태블릿 크기 */
+@media (max-width: 1024px) {
   .main-content {
-    margin-left: 0;
-  }
-
-  .content-header {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
+    margin-left: 250px;
   }
 
   .content-body {
@@ -59,8 +107,65 @@
   }
 }
 
-@media (max-width: 480px) {
+/* 작은 태블릿 */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+
+  .content-header {
+    padding: 15px 20px;
+  }
+
+  .header-left {
+    gap: 12px;
+  }
+
   .content-body {
     padding: 15px;
+  }
+
+  /* 햄버거 버튼 표시 */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* 사이드바 오버레이 표시 */
+  .sidebar-overlay {
+    display: block;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .content-header {
+    padding: 12px 15px;
+  }
+
+  .header-left {
+    gap: 10px;
+  }
+
+  .hamburger-btn {
+    width: 26px;
+    height: 22px;
+  }
+
+  .hamburger-btn span {
+    height: 2.5px;
+  }
+
+  .content-header h1 {
+    font-size: 18px;
+  }
+
+  .user-info {
+    font-size: 13px;
+    width: 100%;
+    text-align: left;
+  }
+
+  .content-body {
+    padding: 12px;
   }
 }

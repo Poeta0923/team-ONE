@@ -4,13 +4,17 @@ import logoImage from '../assets/로고.png';
 import { adminLogout, clearTokens } from '../utils/api';
 import './AdminSidebar.css';
 
-const AdminSidebar = ({ activeMenu, onMenuChange }) => {
+const AdminSidebar = ({ activeMenu, onMenuChange, isOpen, onClose }) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleMenuClick = (item) => {
     onMenuChange(item.id);
     navigate(item.path);
+    // 모바일에서 메뉴 클릭 시 사이드바 닫기
+    if (onClose) {
+      onClose();
+    }
   };
 
   const handleLogout = async () => {
@@ -39,13 +43,17 @@ const AdminSidebar = ({ activeMenu, onMenuChange }) => {
   ];
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <img src={logoImage} alt="Team ONE Logo" className="sidebar-logo-image" />
           <h2>Team ONE</h2>
         </div>
         <p>관리자 패널</p>
+        {/* 모바일에서만 보이는 닫기 버튼 */}
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="메뉴 닫기">
+          ✕
+        </button>
       </div>
       
       <nav className="sidebar-nav">

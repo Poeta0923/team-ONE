@@ -14,11 +14,13 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .contests-header h2 {
   color: #2c3e50;
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   margin: 0;
 }
 
@@ -28,10 +30,11 @@
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .create-contest-button:hover {
@@ -39,8 +42,30 @@
   transform: translateY(-1px);
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #ff6b35 #f0f0f0;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #ff6b35;
+  border-radius: 4px;
+}
+
 .contests-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -56,7 +81,7 @@
   color: #2c3e50;
   border-bottom: 2px solid #dee2e6;
   vertical-align: middle;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
 }
 
 .contests-table th:nth-child(1) { width: 12%; }  
@@ -69,7 +94,7 @@
   color: #495057;
   text-align: center;
   vertical-align: middle;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
@@ -203,6 +228,22 @@
   background: #5a6268;
 }
 
+/* 태블릿 크기 */
+@media (max-width: 1024px) {
+  .contests-page {
+    padding: 15px;
+  }
+
+  .contests-content {
+    padding: 15px;
+  }
+
+  .contests-table {
+    min-width: 550px;
+  }
+}
+
+/* 작은 태블릿 */
 @media (max-width: 768px) {
   .contests-page {
     padding: 12px;
@@ -214,7 +255,7 @@
   
   .contests-header {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     align-items: stretch;
   }
   
@@ -226,15 +267,15 @@
     width: 100%;
   }
   
+  .contests-table {
+    min-width: 500px;
+  }
+  
   .contests-table th,
   .contests-table td {
     padding: 10px 8px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
-  
-  .contests-table th:nth-child(1) { width: 15%; }
-  .contests-table th:nth-child(2) { width: 65%; }
-  .contests-table th:nth-child(3) { width: 15%; }
   
   .delete-button {
     font-size: 0.8rem;
@@ -254,5 +295,61 @@
   .btn-confirm,
   .btn-cancel {
     width: 100%;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .contests-page {
+    padding: 10px;
+  }
+
+  .contests-content {
+    padding: 10px;
+  }
+
+  .contests-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .create-contest-button {
+    font-size: 0.85rem;
+    padding: 8px 16px;
+  }
+
+  .contests-table {
+    min-width: 450px;
+    font-size: 0.8rem;
+  }
+
+  .contests-table th,
+  .contests-table td {
+    padding: 8px 6px;
+  }
+
+  .delete-button {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .modal-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  .contest-input {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  .btn-confirm,
+  .btn-cancel {
+    font-size: 0.9rem;
+    padding: 8px 20px;
   }
 }

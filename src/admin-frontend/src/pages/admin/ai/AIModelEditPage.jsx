@@ -38,7 +38,7 @@ const AIModelEditPage = () => {
 
   // Learning Rate 설명
   const getLearningRateDescription = () => {
-    return '모델의 학습 속도를 결정하는 하이퍼파라미터입니다. 값이 클수록 빠르게 학습하지만 불안정할 수 있으며, 값이 작을수록 천천히 안정적으로 학습합니다. 일반적으로 0.00001 ~ 0.01 사이의 값을 사용합니다.';
+    return '모델의 학습 속도를 결정하는 하이퍼파라미터입니다. 값이 클수록 빠르게 학습하지만 불안정할 수 있으며, 값이 작을수록 천천히 안정적으로 학습합니다. 초기값은 0.0005이며, 일반적으로 0.00001 ~ 0.01 사이의 값을 사용합니다.';
   };
 
   const handleSave = async () => {
@@ -138,7 +138,7 @@ const AIModelEditPage = () => {
                     className="parameter-input-large"
                     value={learningRate}
                     onChange={(e) => setLearningRate(e.target.value)}
-                    placeholder="0.001"
+                    placeholder="0.0005"
                     min={0.00001}
                     max={0.1}
                     step={0.00001}
@@ -147,7 +147,7 @@ const AIModelEditPage = () => {
                 </div>
                 
                 <div className="simple-hint">
-                  권장: 0.00001 ~ 0.01 (최대 0.1)
+                  💡 초기값: 0.0005 | 권장 범위: 0.00001 ~ 0.01 (최대 0.1)
                 </div>
               </div>
             </div>
@@ -174,9 +174,9 @@ const AIModelEditPage = () => {
 
         {/* 간단 안내 */}
         <div className="simple-guide">
-          <span className="guide-icon">💡</span>
+          <span className="guide-icon">ℹ️</span>
           <span className="guide-text">
-            값이 너무 크면 학습이 불안정하고, 너무 작으면 학습이 느려집니다. 변경사항은 즉시 반영됩니다.
+            <strong>초기 학습률:</strong> 0.0005 | 값이 너무 크면 학습이 불안정하고, 너무 작으면 학습이 느려집니다. 변경사항은 즉시 반영됩니다.
           </span>
         </div>
       </div>

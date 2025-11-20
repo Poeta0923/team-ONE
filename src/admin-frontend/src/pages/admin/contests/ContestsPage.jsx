@@ -104,31 +104,33 @@ const ContestsPage = () => {
             </div>
           ) : (
             <>
-              <table className="contests-table">
-                <thead>
-                  <tr>
-                    <th>번호</th>
-                    <th>공모전 이름</th>
-                    <th>관리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contests.map((contest) => (
-                    <tr key={contest.contestId}>
-                      <td>{contest.contestId}</td>
-                      <td>{contest.name}</td>
-                      <td>
-                        <button
-                          className="delete-button"
-                          onClick={() => handleDeleteContest(contest.contestId, contest.name)}
-                        >
-                          삭제하기
-                        </button>
-                      </td>
+              <div className="table-wrapper">
+                <table className="contests-table">
+                  <thead>
+                    <tr>
+                      <th>번호</th>
+                      <th>공모전 이름</th>
+                      <th>관리</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {contests.map((contest) => (
+                      <tr key={contest.contestId}>
+                        <td>{contest.contestId}</td>
+                        <td>{contest.name}</td>
+                        <td>
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDeleteContest(contest.contestId, contest.name)}
+                          >
+                            삭제하기
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               <Pagination
                 currentPage={currentPage}

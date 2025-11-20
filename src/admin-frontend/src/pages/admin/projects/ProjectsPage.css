@@ -14,16 +14,40 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .projects-header h2 {
   color: #2c3e50;
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   margin: 0;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #ff6b35 #f0f0f0;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #ff6b35;
+  border-radius: 4px;
 }
 
 .projects-table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -39,7 +63,7 @@
   color: #2c3e50;
   border-bottom: 2px solid #dee2e6;
   vertical-align: middle;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
 }
 
 
@@ -55,7 +79,7 @@
   color: #495057;
   text-align: center;
   vertical-align: middle;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
@@ -136,6 +160,22 @@
   font-size: 1rem;
 }
 
+/* 태블릿 크기 */
+@media (max-width: 1024px) {
+  .projects-page {
+    padding: 15px;
+  }
+
+  .projects-content {
+    padding: 15px;
+  }
+
+  .projects-table {
+    min-width: 650px;
+  }
+}
+
+/* 작은 태블릿 */
 @media (max-width: 768px) {
   .projects-page {
     padding: 12px;
@@ -145,21 +185,24 @@
     padding: 12px;
   }
   
+  .projects-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
   .projects-header h2 {
     font-size: 1.2rem;
+  }
+  
+  .projects-table {
+    min-width: 600px;
   }
   
   .projects-table th,
   .projects-table td {
     padding: 10px 8px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
-  
-  .projects-table th:nth-child(1) { width: 30%; }
-  .projects-table th:nth-child(2) { width: 18%; }
-  .projects-table th:nth-child(3) { width: 18%; }
-  .projects-table th:nth-child(4) { width: 14%; }
-  .projects-table th:nth-child(5) { width: 12%; }
   
   .status-badge {
     font-size: 0.75rem;
@@ -169,5 +212,40 @@
   .delete-button {
     font-size: 0.8rem;
     padding: 5px 8px;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .projects-page {
+    padding: 10px;
+  }
+
+  .projects-content {
+    padding: 10px;
+  }
+
+  .projects-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .projects-table {
+    min-width: 550px;
+    font-size: 0.8rem;
+  }
+
+  .projects-table th,
+  .projects-table td {
+    padding: 8px 6px;
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 2px 5px;
+  }
+
+  .delete-button {
+    font-size: 0.75rem;
+    padding: 4px 6px;
   }
 }

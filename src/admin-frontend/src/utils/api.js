@@ -4,11 +4,11 @@
 import { mockData, mockDelay } from './mockData';
 
 // true로 설정하면 실제 API 대신 Mock 데이터를 사용합니다!!!!배포 환경에서는 반드시 false!!!!
-export const USE_MOCK_API = false;
+export const USE_MOCK_API = true;
 
 // API 기본 설정
 const getApiBaseUrl = () => {
-  return '';
+  return 'http://ceprj.gachon.ac.kr:60002';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
