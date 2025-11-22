@@ -97,6 +97,10 @@
   transition: color 0.3s ease;
   white-space: nowrap;
   font-size: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .nav-link:hover {

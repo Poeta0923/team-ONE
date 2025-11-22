@@ -6,6 +6,18 @@ const HomePage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [visibleElements, setVisibleElements] = useState(new Set());
 
+  // 스무스 스크롤 함수
+  const smoothScrollTo = (elementId) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      const offsetTop = element.offsetTop - 80; 
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
@@ -61,7 +73,12 @@ const HomePage = () => {
               AI 기반 매칭 시스템으로 개발자, 디자이너, 기획자를 연결하여 최적의 프로젝트 팀을 자동으로 구성합니다.
             </p>
             <div className={`hero-buttons ${isVisible ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '4.5s' }}>
-              <a href="#about" className="btn btn-primary">더 알아보기</a>
+              <button 
+                onClick={() => smoothScrollTo('about')} 
+                className="btn btn-primary"
+              >
+                더 알아보기
+              </button>
             </div>
           </div>
         </div>

@@ -1,3 +1,6 @@
+html {
+  scroll-behavior: smooth;
+}
 
 .home-page {
   min-height: 100vh;
@@ -259,6 +262,10 @@
   font-weight: 600;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  display: inline-block;
 }
 
 .btn-primary {

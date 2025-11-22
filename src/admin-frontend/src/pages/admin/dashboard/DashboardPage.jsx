@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AdminLayout from '../../../components/AdminLayout';
 import { fetchDashboard } from '../../../utils/api';
@@ -115,7 +116,7 @@ const DashboardPage = () => {
         <div className="dashboard-section">
           <div className="section-header">
             <h3>최근 생성된 프로젝트</h3>
-            <a href="/admin/projects" className="view-all-link">전체보기</a>
+            <Link to="/admin/projects" className="view-all-link">전체보기</Link>
           </div>
           <div className="list-container">
             {dashboardData.recentProjects.map(project => (
@@ -136,7 +137,7 @@ const DashboardPage = () => {
         <div className="dashboard-section">
           <div className="section-header">
             <h3>최근 가입한 회원</h3>
-            <a href="/admin/users" className="view-all-link">전체보기</a>
+            <Link to="/admin/users" className="view-all-link">전체보기</Link>
           </div>
           <div className="user-cards-container">
             {dashboardData.recentUsers.slice(0, 6).map(user => (

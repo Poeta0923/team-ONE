@@ -14,6 +14,19 @@ const Navbar = ({ type = 'main' }) => {
     setMobileMenuOpen(false);
   };
 
+  // 스무스 스크롤 함수
+  const smoothScrollTo = (elementId) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      const offsetTop = element.offsetTop - 80; 
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+    }
+    closeMobileMenu(); // 모바일 메뉴 닫기
+  };
+
   if (type === 'admin') {
     return (
       <header className="navbar admin-navbar">
@@ -60,8 +73,18 @@ const Navbar = ({ type = 'main' }) => {
         </button>
 
         <nav className={`nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          <a href="#about" className="nav-link" onClick={closeMobileMenu}>서비스 소개</a>
-          <a href="#team" className="nav-link" onClick={closeMobileMenu}>팀원 소개</a>
+          <button 
+            onClick={() => smoothScrollTo('about')} 
+            className="nav-link"
+          >
+            서비스 소개
+          </button>
+          <button 
+            onClick={() => smoothScrollTo('team')} 
+            className="nav-link"
+          >
+            팀원 소개
+          </button>
           <Link to="/login" className="nav-link login-btn" onClick={closeMobileMenu}>관리자 로그인</Link>
         </nav>
       </div>
