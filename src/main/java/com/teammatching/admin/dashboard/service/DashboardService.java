@@ -12,8 +12,10 @@ import com.teammatching.admin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap; // HashMap 임포트 추가
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,29 +29,16 @@ public class DashboardService {
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
 
-
-    //시스템의 주요 현황(통계 리스트, 최근 목록)을 요약하여 반환
     public DashboardResponse getDashboardSummary() {
-
         int currentYear = LocalDate.now().getYear();
-
-        // 1. 월간 통계 리스트 계산 (가입자 + 참여자)
         List<MonthlyStat> monthlyStats = calculateMonthlyStats(currentYear);
-
-        // 2. 연간 가입자 통계 리스트 계산 (최근 2년치)
         List<AnnualStat> annualStats = calculateAnnualStats(currentYear - 1);
-
-        // 3. 최근 생성된 프로젝트 3개 조회 (DTO로 변환)
         List<RecentProjectResponse> recentProjects = projectRepository.findTop3ByOrderByDateDesc().stream()
                 .map(RecentProjectResponse::from)
                 .toList();
-
-        // 4. 최근 가입한 회원 3명 조회 (DTO로 변환)
-        List<RecentUserResponse> recentUsers = userRepository.findTop10ByRoleOrderByDateDesc(Role.USER).stream()
+        List<RecentUserResponse> recentUsers = userRepository.findTop3ByRoleOrderByDateDesc(Role.USER).stream()
                 .map(RecentUserResponse::from)
                 .toList();
-
-        // 5. 최종 DTO로 조합하여 반환
         return DashboardResponse.builder()
                 .monthlyUserGrowth(monthlyStats)
                 .annualUserGrowth(annualStats)
@@ -58,29 +47,17 @@ public class DashboardService {
                 .build();
     }
 
-    //월간 가입자 및 참여자 누적 계산
+
     private List<MonthlyStat> calculateMonthlyStats(int year) {
-        // 신규 가입자 수
-        Map<Integer, Long> userCounts = userRepository.findMonthlyUserCounts(year).stream()
-                .collect(Collectors.toMap(
-                        result -> ((Number) result[0]).intValue(), // Key: 월(Month)
-                        result -> ((Number) result[1]).longValue()  // Value: 가입자 수(Count)
-                ));
+        // 1. 안전한 변환 헬퍼 함수 사용
+        Map<Integer, Long> userCounts = convertToMap(userRepository.findMonthlyUserCounts(year));
+        Map<Integer, Long> participantCounts = convertToMap(memberRepository.findMonthlyParticipantCounts(year));
 
-        // 신규 프로젝트 참여자 수 맵
-        Map<Integer, Long> participantCounts = memberRepository.findMonthlyParticipantCounts(year).stream()
-                .collect(Collectors.toMap(
-                        result -> ((Number) result[0]).intValue(), // Key: 월(Month)
-                        result -> ((Number) result[1]).longValue()  // Value: 참여자 수(Count)
-                ));
-
-        // 3. 누적 계산
         List<MonthlyStat> results = new ArrayList<>();
         long cumulativeUserCount = 0;
         long cumulativeParticipantCount = 0;
 
         for (int month = 1; month <= 12; month++) {
-
             long newUserCount = userCounts.getOrDefault(month, 0L);
             long newParticipantCount = participantCounts.getOrDefault(month, 0L);
 
@@ -93,13 +70,29 @@ public class DashboardService {
                     .projectParticipantCount(cumulativeParticipantCount)
                     .build());
         }
-
         return results;
     }
 
-    // 연간 가입자 계산
+    private Map<Integer, Long> convertToMap(List<Object[]> results) {
+        Map<Integer, Long> map = new HashMap<>();
+        if (results == null) return map;
+
+        for (Object[] result : results) {
+            try {
+                // DB 드라이버에 따라 리턴 타입이 다를 수 있으므로 안전하게 변환
+                int key = result[0] != null ? ((Number) result[0]).intValue() : 0;
+                long value = result[1] != null ? ((Number) result[1]).longValue() : 0L;
+                map.put(key, value);
+            } catch (Exception e) {
+                // 변환 실패 시 로그만 남기고 건너뜀 (전체 에러 방지)
+                System.err.println("대시보드 데이터 변환 오류: " + e.getMessage());
+            }
+        }
+        return map;
+    }
+
+    // (calculateAnnualStats 메소드는 기존과 동일하지만, 위 헬퍼 메소드를 쓰면 더 좋습니다)
     private List<AnnualStat> calculateAnnualStats(int startYear) {
-        // startYear (작년) 부터 현재까지의 연도별 가입자 수 리스트
         return userRepository.findAnnualUserCounts(startYear).stream()
                 .map(result -> AnnualStat.builder()
                         .year(((Number) result[0]).intValue())
