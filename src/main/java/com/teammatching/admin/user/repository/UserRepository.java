@@ -23,7 +23,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 
     //가장 최근에 가입한 'USER' 3명을 조회(내림차순 기준)
-    List<User> findTop10ByRoleOrderByDateDesc(Role role);
+    List<User> findTop3ByRoleOrderByDateDesc(Role role);
 
     // 특정 년도의 월별 'USER' 가입자 수를 집계
     @Query("SELECT MONTH(u.date) as month, COUNT(u.userId) as count " +
@@ -39,4 +39,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "GROUP BY YEAR(u.date) " +
             "ORDER BY year DESC")
     List<Object[]> findAnnualUserCounts(@Param("startYear") int startYear);
+
 }

@@ -1,5 +1,6 @@
 package com.teammatching.admin.dashboard.service;
 
+import com.teammatching.admin.user.domain.Role;
 import com.teammatching.admin.content.repository.MemberRepository;
 import com.teammatching.admin.content.repository.ProjectRepository;
 import com.teammatching.admin.dashboard.dto.DashboardResponse;
@@ -7,7 +8,6 @@ import com.teammatching.admin.dashboard.dto.DashboardResponse.AnnualStat;
 import com.teammatching.admin.dashboard.dto.DashboardResponse.MonthlyStat;
 import com.teammatching.admin.dashboard.dto.DashboardResponse.RecentProjectResponse;
 import com.teammatching.admin.dashboard.dto.DashboardResponse.RecentUserResponse;
-import com.teammatching.admin.user.domain.Role;
 import com.teammatching.admin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
