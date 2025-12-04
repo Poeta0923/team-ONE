@@ -12,13 +12,12 @@ import com.teammatching.admin.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap; // HashMap 임포트 추가
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -49,7 +48,6 @@ public class DashboardService {
 
 
     private List<MonthlyStat> calculateMonthlyStats(int year) {
-        // 1. 안전한 변환 헬퍼 함수 사용
         Map<Integer, Long> userCounts = convertToMap(userRepository.findMonthlyUserCounts(year));
         Map<Integer, Long> participantCounts = convertToMap(memberRepository.findMonthlyParticipantCounts(year));
 
@@ -91,7 +89,6 @@ public class DashboardService {
         return map;
     }
 
-    // (calculateAnnualStats 메소드는 기존과 동일하지만, 위 헬퍼 메소드를 쓰면 더 좋습니다)
     private List<AnnualStat> calculateAnnualStats(int startYear) {
         return userRepository.findAnnualUserCounts(startYear).stream()
                 .map(result -> AnnualStat.builder()
