@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 서버, DB등 주요 정보들
+\*\*/*.properties
+application.properties
+application-prod.properties
