@@ -35,7 +35,7 @@ Team-ONE 관리자 시스템은 AI 기반 팀원 매칭 에이전시 서비스�
 Team-ONE 관리자 시스템은 확장성과 유지보수성을 고려하여 프론트엔드, 백엔드, 그리고 AI 서비스가 독립적으로 분리된 **마이크로서비스 지향 아키텍처(Microservices-oriented Architecture)** 를 채택했습니다.
 
 각 서비스는 특화된 기술 스택(React, Node.js, Spring Boot, FastAPI)을 사용하여 최적의 성능을 내도록 설계되었으며 리버스 프록시 기술을 통해 서버를 유기적으로 통합하였습니다.
-<img width="2224" height="1124" alt="architecture" src="https://github.com/user-attachments/assets/507c60b1-e8fb-4589-84ac-b586cd69bee6" />
+
 
 ### ☕ 관리자 서버(Spring Boot)의 역할
 관리자 서버는 MSA 환경 내에서 **데이터 허브**이자 **제어 센터**로서의 역할을 수행합니다.
@@ -130,3 +130,4 @@ application-prod.properties을 사용해야 합니다.
 | `PUT` | **/admin/ai-model/parameter/score** | 재정렬 모델 Learning Rate 파라미터 수정    |
 
 | `PUT` | **/admin/ai-model/parameter/acceptor** | 수락 확률 모델 Learning Rate 파라미터 수정  |
+
