@@ -136,5 +136,5 @@ application-prod.properties을 사용해야 합니다.
 | :--- | :--- |:--------------------------------|
 | `GET` | **/admin/ai-model** | 3종 AI 모델(임베딩, 재정렬, 수락확률) 정확도 조회 |
 | `PUT` | **/admin/ai-model/parameter/score** | 재정렬 모델 Learning Rate 파라미터 수정    |
-
 | `PUT` | **/admin/ai-model/parameter/acceptor** | 수락 확률 모델 Learning Rate 파라미터 수정  |
+
