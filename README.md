@@ -9,7 +9,7 @@
 5. [API 기능 명세](#5-api-기능-명세)
 ---
 ## 1. 프로젝트 개요 및 목표
-Team-ONE은 프로젝트 팀원을 구하는 대학생들을 AI로 매칭해주는 서비스입니다. Team-ONE 관리자 시스템은 서비스 품질 향상과 데이터 무결성 확보를 위한 관리자자 전용 대시보드 및 관리 시스템입니다.  
+Team-ONE은 프로젝트 팀원을 구하는 대학생들을 AI로 매칭해주는 서비스입니다. Team-ONE 관리자 시스템은 서비스 품질 향상과 데이터 무결성 확보를 위한 관리자 전용 대시보드 및 관리 시스템입니다.  
 ### 🗓️ 개발 기간
 `2025.09.03` ~ `2025.12.03`
 ### 💡 필요성 
@@ -131,10 +131,11 @@ application-prod.properties을 사용해야 합니다.
 | `GET` | **/admin/contests**             | 전체 공모전 리스트 조회 |
 | `DELETE` | **/admin/contests/{contestId}** | 특정 공모전 삭제     |
 
-### 🤖 AI 관리
+#### 🤖 AI 관리
 | Method | Endpoint | Description                     |
 | :--- | :--- |:--------------------------------|
 | `GET` | **/admin/ai-model** | 3종 AI 모델(임베딩, 재정렬, 수락확률) 정확도 조회 |
 | `PUT` | **/admin/ai-model/parameter/score** | 재정렬 모델 Learning Rate 파라미터 수정    |
 | `PUT` | **/admin/ai-model/parameter/acceptor** | 수락 확률 모델 Learning Rate 파라미터 수정  |
+
 
