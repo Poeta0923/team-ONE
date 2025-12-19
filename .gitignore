@@ -1,3 +1,8 @@
+cat > ../../.gitignore <<'EOF'
+# Node
+node_modules
+
+# Gradle / Spring Boot
 HELP.md
 .gradle
 build/
@@ -35,3 +40,4 @@ out/
 
 ### VS Code ###
 .vscode/
+EOF

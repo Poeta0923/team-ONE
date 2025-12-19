@@ -1,0 +1,14 @@
+{
+  "name": "t25202-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "v0.5/src/*"
+  ],
+  "scripts": {
+    "install:all": "npm install"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}
