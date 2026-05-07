@@ -1,6 +1,6 @@
 # team-ONE — User Backend
 
-> 팀 프로젝트 매칭 플랫폼의 사용자용 Node.js 백엔드 서버
+> `src/user-backend` | 팀 프로젝트 매칭 플랫폼의 사용자용 Node.js 백엔드 서버
 
 ---
 
